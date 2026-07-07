@@ -1,0 +1,152 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { GlassCard } from '../components/ui/Glass';
+import { Users, BookOpen, GraduationCap, Trophy, TrendingDown } from 'lucide-react';
+import { rankStudents } from '../utils/ranking';
+import { StudentProgressChart } from '../components/StudentProgressChart';
+import { studentService } from '../services/studentService';
+import { classService } from '../services/classService';
+import { subjectService } from '../services/subjectService';
+import { scoreService } from '../services/scoreService';
+
+export const DashboardScreen = () => {
+  const [students, setStudents] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [studentsData, classesData, subjectsData] = await Promise.all([
+          studentService.getAll({ status: 'active' }),
+          classService.getAll(),
+          subjectService.getAll(),
+        ]);
+        setStudents(studentsData);
+        setClasses(classesData);
+        setSubjects(subjectsData);
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const [topPerformer, setTopPerformer] = useState<any>(null);
+  const [lowestPerformer, setLowestPerformer] = useState<any>(null);
+
+  useEffect(() => {
+    const computePerformers = async () => {
+      if (students.length === 0) return;
+      try {
+        const scores = await scoreService.getAll();
+        if (!scores || scores.length === 0) return;
+        const studentIds = students.map(s => s.id);
+        const filteredScores = scores.filter((s: any) => studentIds.includes(s.student_id));
+        const studentAverages = students.map((s: any) => {
+          const studentScores = filteredScores.filter((sc: any) => sc.student_id === s.id);
+          const total = studentScores.reduce((sum: number, sc: any) => sum + (sc.total || 0), 0);
+          const avg = studentScores.length ? total / studentScores.length : 0;
+          const examTotal = studentScores.reduce((sum: number, sc: any) => sum + (Number(sc.exam_score) || 0), 0) * 2;
+          return { id: s.id, name: s.name, average: avg, rankScore: examTotal };
+        });
+        const ranked = rankStudents(studentAverages);
+        setTopPerformer(ranked.length > 0 ? ranked[0] : null);
+        const lowest = [...ranked].filter(s => s.average > 0);
+        setLowestPerformer(lowest.length > 0 ? lowest[lowest.length - 1] : null);
+      } catch (err) {
+        console.error('Failed to compute performers:', err);
+      }
+    };
+    computePerformers();
+  }, [students]);
+
+  const stats = [
+    { label: 'Total Students', value: students.length, icon: Users, color: 'text-blue-800', bg: 'bg-blue-500/20' },
+    { label: 'Classes', value: classes.length, icon: BookOpen, color: 'text-indigo-800', bg: 'bg-indigo-500/20' },
+    { label: 'Subjects', value: subjects.length, icon: GraduationCap, color: 'text-emerald-800', bg: 'bg-emerald-500/20' }
+  ];
+
+  if (loading) return <div className="p-6 pt-4"><p className="text-slate-500">Loading dashboard...</p></div>;
+
+  return (
+    <div className="p-6 pt-4 flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0 }}>
+          <GlassCard className="p-2 flex items-center justify-between relative overflow-hidden group gap-2">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg ${stats[0].bg} flex items-center justify-center shrink-0`}>
+                {React.createElement(stats[0].icon, { className: stats[0].color, size: 16 })}
+              </div>
+              <p className="text-slate-700 text-[10px] font-bold uppercase tracking-widest">{stats[0].label}</p>
+            </div>
+            <p className="text-xl font-black text-slate-900 leading-tight pr-2">{stats[0].value}</p>
+            <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
+          </GlassCard>
+        </motion.div>
+        <div className="grid grid-cols-2 gap-2">
+          {stats.slice(1).map((stat, i) => (
+            <motion.div key={stat.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (i + 1) * 0.1 }}>
+              <GlassCard className="p-2 flex items-center justify-between relative overflow-hidden group gap-2 h-full">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
+                    {React.createElement(stat.icon, { className: stat.color, size: 16 })}
+                  </div>
+                  <p className="text-slate-700 text-[10px] font-bold uppercase tracking-widest">{stat.label}</p>
+                </div>
+                <p className="text-xl font-black text-slate-900 leading-tight pr-1">{stat.value}</p>
+                <div className="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
+              </GlassCard>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-3 mt-2">
+        <GlassCard className="p-2 relative overflow-hidden flex items-center justify-between">
+          <div className="flex items-center gap-3 relative z-10 w-full">
+            <div className="w-8 h-8 bg-yellow-400/20 border border-yellow-400/50 rounded-lg flex items-center justify-center shrink-0">
+              <Trophy className="text-yellow-600" size={16} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[9px] text-yellow-600 font-bold uppercase tracking-widest mb-0.5">Top Performer</p>
+              {topPerformer && topPerformer.average > 0 ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-900 truncate">{topPerformer.name}</p>
+                  <p className="text-emerald-600 text-[10px] font-black">{topPerformer.average.toFixed(2)}%</p>
+                </div>
+              ) : (
+                <p className="text-slate-500 italic text-[10px]">No scores yet</p>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-2 relative overflow-hidden flex items-center justify-between">
+          <div className="flex items-center gap-3 relative z-10 w-full">
+            <div className="w-8 h-8 bg-red-400/20 border border-red-400/50 rounded-lg flex items-center justify-center shrink-0">
+              <TrendingDown className="text-red-500" size={16} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[9px] text-red-500 font-bold uppercase tracking-widest mb-0.5">Needs Attention</p>
+              {lowestPerformer ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-900 truncate">{lowestPerformer.name}</p>
+                  <p className="text-red-600 text-[10px] font-black">{lowestPerformer.average.toFixed(2)}%</p>
+                </div>
+              ) : (
+                <p className="text-slate-500 italic text-[10px]">No scores yet</p>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <StudentProgressChart />
+      </motion.div>
+    </div>
+  );
+};

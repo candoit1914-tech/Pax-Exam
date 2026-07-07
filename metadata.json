@@ -1,0 +1,6 @@
+{
+  "name": "Ok20",
+  "description": "A fully offline school management PWA with 3D glassmorphism interface. Manages students, classes, and subjects, enters scores, computes Ghana grading system, computes rankings, and generates PDF student reports directly on device.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
