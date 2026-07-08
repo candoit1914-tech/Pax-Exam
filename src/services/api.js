@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 });
@@ -27,7 +25,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) throw new Error('No refresh token');
 
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, { refreshToken });
         localStorage.setItem('token', data.accessToken);
         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
@@ -47,4 +45,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-export { API_BASE_URL };

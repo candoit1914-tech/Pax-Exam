@@ -1,16 +1,17 @@
-import pkg from 'pg';
-const { Pool } = pkg;
+import pg from 'pg';
+const { Pool } = pg;
+
+const connectionString = process.env.DATABASE_URL || process.env.PG_CONNECTION;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL or PG_CONNECTION environment variable is required');
+}
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 20,
+  connectionString,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  max: parseInt(process.env.PG_MAX_CLIENTS || '10', 10),
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
 });
 
 export default pool;

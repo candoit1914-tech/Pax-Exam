@@ -36,15 +36,26 @@ app.use(limiter);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/schools', schoolRoutes);
+app.use('/schools', schoolRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/students', studentRoutes);
 app.use('/api/classes', classRoutes);
+app.use('/classes', classRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/subjects', subjectRoutes);
 app.use('/api/scores', scoreRoutes);
+app.use('/scores', scoreRoutes);
 app.use('/api/teachers', teacherRoutes);
+app.use('/teachers', teacherRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/reports', reportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

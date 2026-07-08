@@ -5,13 +5,13 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          type: postgres
-          name: ok20-neon
-      - key: JWT_SECRET
-        generateValue: true
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
       - key: CORS_ORIGIN
         value: https://your-frontend-domain.com

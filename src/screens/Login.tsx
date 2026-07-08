@@ -117,6 +117,12 @@ export const LoginScreen = () => {
                 <div className="h-[1px] w-full bg-slate-200/50 mb-4"></div>
                 <p className="text-[9px] text-slate-500 text-center uppercase tracking-[0.3em] font-medium">Cloud-Based School Management System</p>
               </div>
+
+              <div className="w-full mt-2 p-3 rounded-xl bg-blue-50/50 border border-blue-200/60">
+                <p className="text-[10px] font-bold text-blue-700 text-center uppercase tracking-[0.2em] mb-1">Demo Credentials</p>
+                <p className="text-[10px] text-slate-600 text-center">Email: admin@school.com</p>
+                <p className="text-[10px] text-slate-600 text-center">Password: Admin@12345</p>
+              </div>
             </form>
           </GlassCard>
         </motion.div>
