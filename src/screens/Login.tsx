@@ -38,7 +38,7 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="mobile-container flex items-start justify-center p-6 pt-48 relative overflow-hidden">
+    <div className="mobile-container flex items-center justify-center p-6 min-h-screen relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,_#e0c3fc_0%,_#8ec5fc_100%)]"></div>
       <div className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] bg-white/40 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-300/30 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
@@ -54,7 +54,7 @@ export const LoginScreen = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-6"
         >
           <h1 className="text-7xl font-black text-slate-900 mb-4 drop-shadow-sm">
             Ok20
@@ -67,8 +67,8 @@ export const LoginScreen = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
         >
-          <GlassCard droplet className="p-8 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
-            <form onSubmit={handleLogin} className="flex flex-col items-center gap-6 relative z-10">
+           <GlassCard droplet className="p-6 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+            <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 relative z-10">
               <div className="flex flex-col items-center gap-2 w-full">
                 <span className="text-slate-700 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Secure Login</span>
                 <div className="w-full flex flex-col gap-4">
@@ -123,10 +123,9 @@ export const LoginScreen = () => {
                 Student Portal — View Report
               </Link>
 
-              <div className="w-full mt-2 p-3 rounded-xl bg-blue-50/50 border border-blue-200/60">
-                <p className="text-[10px] font-bold text-blue-700 text-center uppercase tracking-[0.2em] mb-1">Demo Credentials</p>
-                <p className="text-[10px] text-slate-600 text-center">Email: admin@school.com</p>
-                <p className="text-[10px] text-slate-600 text-center">Password: Admin@12345</p>
+              <div className="w-full p-3 rounded-xl bg-amber-50/50 border border-amber-200/60">
+                <p className="text-[10px] font-bold text-amber-700 text-center uppercase tracking-[0.2em]">Teachers</p>
+                <p className="text-[9px] text-slate-500 text-center">Use the credentials provided by your admin.</p>
               </div>
             </form>
           </GlassCard>
