@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_school_id ON users(school_id);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_school_id ON users(school_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- ============================================================
 -- TEACHERS
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS teachers (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_teachers_school_id ON teachers(school_id);
+CREATE INDEX IF NOT EXISTS idx_teachers_school_id ON teachers(school_id);
 
 -- ============================================================
 -- CLASSES
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS classes (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_classes_school_id ON classes(school_id);
+CREATE INDEX IF NOT EXISTS idx_classes_school_id ON classes(school_id);
 
 -- ============================================================
 -- SUBJECTS
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS subjects (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_subjects_school_id ON subjects(school_id);
+CREATE INDEX IF NOT EXISTS idx_subjects_school_id ON subjects(school_id);
 
 -- ============================================================
 -- ACADEMIC YEARS
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS academic_years (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_academic_years_school_id ON academic_years(school_id);
+CREATE INDEX IF NOT EXISTS idx_academic_years_school_id ON academic_years(school_id);
 
 -- ============================================================
 -- TERMS
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS terms (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_terms_academic_year_id ON terms(academic_year_id);
+CREATE INDEX IF NOT EXISTS idx_terms_academic_year_id ON terms(academic_year_id);
 
 -- ============================================================
 -- STUDENTS
@@ -139,10 +139,10 @@ CREATE TABLE IF NOT EXISTS students (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_students_school_id ON students(school_id);
-CREATE INDEX idx_students_class_id ON students(class_id);
-CREATE INDEX idx_students_name ON students(name);
-CREATE INDEX idx_students_status ON students(status);
+CREATE INDEX IF NOT EXISTS idx_students_school_id ON students(school_id);
+CREATE INDEX IF NOT EXISTS idx_students_class_id ON students(class_id);
+CREATE INDEX IF NOT EXISTS idx_students_name ON students(name);
+CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
 
 -- ============================================================
 -- EXAMINATIONS
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS examinations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_examinations_school_id ON examinations(school_id);
+CREATE INDEX IF NOT EXISTS idx_examinations_school_id ON examinations(school_id);
 
 -- ============================================================
 -- SCORES
@@ -184,13 +184,13 @@ CREATE TABLE IF NOT EXISTS scores (
     CONSTRAINT chk_exam_score CHECK (exam_score >= 0 AND exam_score <= 50)
 );
 
-CREATE INDEX idx_scores_school_id ON scores(school_id);
-CREATE INDEX idx_scores_student_id ON scores(student_id);
-CREATE INDEX idx_scores_subject_id ON scores(subject_id);
-CREATE INDEX idx_scores_term ON scores(term);
-CREATE INDEX idx_scores_academic_year ON scores(academic_year);
-CREATE INDEX idx_scores_academic_year_term ON scores(academic_year, term);
-CREATE INDEX idx_scores_student_academic_year_term ON scores(student_id, academic_year, term);
+CREATE INDEX IF NOT EXISTS idx_scores_school_id ON scores(school_id);
+CREATE INDEX IF NOT EXISTS idx_scores_student_id ON scores(student_id);
+CREATE INDEX IF NOT EXISTS idx_scores_subject_id ON scores(subject_id);
+CREATE INDEX IF NOT EXISTS idx_scores_term ON scores(term);
+CREATE INDEX IF NOT EXISTS idx_scores_academic_year ON scores(academic_year);
+CREATE INDEX IF NOT EXISTS idx_scores_academic_year_term ON scores(academic_year, term);
+CREATE INDEX IF NOT EXISTS idx_scores_student_academic_year_term ON scores(student_id, academic_year, term);
 
 -- ============================================================
 -- ATTENDANCE
@@ -206,8 +206,8 @@ CREATE TABLE IF NOT EXISTS attendance (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_attendance_school_id ON attendance(school_id);
-CREATE INDEX idx_attendance_student_id ON attendance(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_school_id ON attendance(school_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_id ON attendance(student_id);
 
 -- ============================================================
 -- REPORT CARDS
@@ -227,8 +227,8 @@ CREATE TABLE IF NOT EXISTS report_cards (
     generated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_report_cards_school_id ON report_cards(school_id);
-CREATE INDEX idx_report_cards_student_id ON report_cards(student_id);
+CREATE INDEX IF NOT EXISTS idx_report_cards_school_id ON report_cards(school_id);
+CREATE INDEX IF NOT EXISTS idx_report_cards_student_id ON report_cards(student_id);
 
 -- ============================================================
 -- AUDIT LOGS
@@ -245,9 +245,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_logs_school_id ON audit_logs(school_id);
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_school_id ON audit_logs(school_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 
 -- ============================================================
 -- REFRESH TOKENS
@@ -260,8 +260,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 
 -- ============================================================
 -- FUNCTIONS
@@ -277,33 +277,40 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_schools_updated_at
-    BEFORE UPDATE ON schools
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_schools_updated_at BEFORE UPDATE ON schools FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_students_updated_at
-    BEFORE UPDATE ON students
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_classes_updated_at
-    BEFORE UPDATE ON classes
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_classes_updated_at BEFORE UPDATE ON classes FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_subjects_updated_at
-    BEFORE UPDATE ON subjects
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_subjects_updated_at BEFORE UPDATE ON subjects FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_scores_updated_at
-    BEFORE UPDATE ON scores
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_scores_updated_at BEFORE UPDATE ON scores FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TRIGGER update_teachers_updated_at
-    BEFORE UPDATE ON teachers
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DO $$ BEGIN
+    CREATE TRIGGER update_teachers_updated_at BEFORE UPDATE ON teachers FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================================
 -- SEED DATA (Default School and Admin)
