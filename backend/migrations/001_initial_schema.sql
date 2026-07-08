@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS schools (
 -- ============================================================
 -- USERS (authentication + roles)
 -- ============================================================
-CREATE TYPE user_role AS ENUM ('super_admin', 'school_admin', 'teacher', 'student');
+DO $$ BEGIN CREATE TYPE user_role AS ENUM ('super_admin', 'school_admin', 'teacher', 'student'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
