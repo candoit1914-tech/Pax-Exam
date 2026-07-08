@@ -10,9 +10,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 
 async function runMigrations() {
-  const sql = fs.readFileSync(path.join(__dirname, 'migrations', '001_initial_schema.sql'), 'utf8');
-  await pool.query(sql);
-  console.log('Schema migration applied');
+  const files = fs.readdirSync(path.join(__dirname, 'migrations'))
+    .filter(f => f.endsWith('.sql'))
+    .sort();
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(__dirname, 'migrations', file), 'utf8');
+    await pool.query(sql);
+    console.log(`Migration ${file} applied`);
+  }
 }
 
 async function seedAdmin() {

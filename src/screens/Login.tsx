@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
-import { Lock, LogIn, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Lock, LogIn, Loader2, Eye, EyeOff, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const LoginScreen = () => {
@@ -117,6 +117,11 @@ export const LoginScreen = () => {
                 <div className="h-[1px] w-full bg-slate-200/50 mb-4"></div>
                 <p className="text-[9px] text-slate-500 text-center uppercase tracking-[0.3em] font-medium">Cloud-Based School Management System</p>
               </div>
+
+              <Link to="/student-portal" className="flex items-center justify-center gap-2 w-full py-2 text-[11px] font-bold text-blue-700 bg-blue-50/50 rounded-xl border border-blue-200/60 hover:bg-blue-100/50 transition-all">
+                <GraduationCap size={16} />
+                Student Portal — View Report
+              </Link>
 
               <div className="w-full mt-2 p-3 rounded-xl bg-blue-50/50 border border-blue-200/60">
                 <p className="text-[10px] font-bold text-blue-700 text-center uppercase tracking-[0.2em] mb-1">Demo Credentials</p>

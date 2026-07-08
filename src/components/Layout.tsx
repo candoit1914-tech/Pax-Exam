@@ -1,21 +1,30 @@
 import React from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, BookOpen, Edit3, FileText, Settings } from 'lucide-react';
+import { Home, Users, BookOpen, Edit3, FileText, Settings, UserCog, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Layout: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const role = user?.role || JSON.parse(localStorage.getItem('user') || '{}').role;
+  const isAdmin = role === 'super_admin' || role === 'school_admin';
 
-  const navItems = [
-    { path: '/dashboard', icon: Home, label: 'Dashboard', subtitle: 'Overview & Analytics' },
-    { path: '/students', icon: Users, label: 'Students', subtitle: 'Manage Enrolments & Data' },
-    { path: '/classes', icon: BookOpen, label: 'Classes', subtitle: 'Manage Classes & Subjects' },
-    { path: '/scores', icon: Edit3, label: 'Scores', subtitle: 'Record Academic Performance' },
-    { path: '/reports', icon: FileText, label: 'Reports', subtitle: 'Generate Formal Report Cards' },
-  ];
+  const navItems = isAdmin
+    ? [
+        { path: '/dashboard', icon: Home, label: 'Dashboard', subtitle: 'Overview & Analytics' },
+        { path: '/students', icon: Users, label: 'Students', subtitle: 'Manage Enrolments & Data' },
+        { path: '/classes', icon: BookOpen, label: 'Classes', subtitle: 'Manage Classes & Subjects' },
+        { path: '/scores', icon: Edit3, label: 'Scores', subtitle: 'Record Academic Performance' },
+        { path: '/reports', icon: FileText, label: 'Reports', subtitle: 'Generate Formal Report Cards' },
+      ]
+    : [
+        { path: '/scores', icon: Edit3, label: 'Scores', subtitle: 'Record Academic Performance' },
+        { path: '/reports', icon: FileText, label: 'Reports', subtitle: 'View Reports' },
+      ];
 
-  if (location.pathname === '/' || location.pathname === '/login') {
+  if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/student-portal') {
     return (
       <AnimatePresence mode="wait">
         <motion.div 
@@ -42,15 +51,25 @@ export const Layout: React.FC = () => {
            <h1 className="text-2xl font-black tracking-tight text-slate-900">{pageTitle}</h1>
            <p className="text-blue-600 font-bold uppercase tracking-widest text-[9px] drop-shadow-sm">{pageSubtitle}</p>
         </div>
-        <NavLink 
-          to="/settings" 
-          className={({ isActive }) => cn(
-            "p-2 rounded-full flex items-center justify-center backdrop-blur-md border shadow-sm transition-all",
-            isActive ? "bg-white border-white/60 text-blue-600" : "bg-white/40 border-white/50 text-slate-700 hover:bg-white/60"
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <NavLink to="/teachers" className={({ isActive }) => cn(
+              "p-2 rounded-full flex items-center justify-center backdrop-blur-md border shadow-sm transition-all",
+              isActive ? "bg-white border-white/60 text-blue-600" : "bg-white/40 border-white/50 text-slate-700 hover:bg-white/60"
+            )}>
+              <UserCog size={20} />
+            </NavLink>
           )}
-        >
-          <Settings size={20} className={location.pathname === '/settings' ? "animate-[spin_4s_linear_infinite]" : ""} />
-        </NavLink>
+          <NavLink 
+            to="/settings" 
+            className={({ isActive }) => cn(
+              "p-2 rounded-full flex items-center justify-center backdrop-blur-md border shadow-sm transition-all",
+              isActive ? "bg-white border-white/60 text-blue-600" : "bg-white/40 border-white/50 text-slate-700 hover:bg-white/60"
+            )}
+          >
+            <Settings size={20} className={location.pathname === '/settings' ? "animate-[spin_4s_linear_infinite]" : ""} />
+          </NavLink>
+        </div>
       </div>
 
       <main className="flex-1 overflow-y-auto no-scrollbar pb-24">

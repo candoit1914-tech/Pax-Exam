@@ -162,5 +162,121 @@ export const AuthController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async createTeacher(req, res, next) {
+    try {
+      const { name, email } = req.body;
+      if (!name || !email) {
+        return res.status(400).json({ error: 'Name and email are required.' });
+      }
+
+      const existing = await UserModel.findByEmail(email);
+      if (existing) {
+        return res.status(409).json({ error: 'Email already registered.' });
+      }
+
+      const password = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const user = await UserModel.create({
+        school_id: req.user.school_id,
+        email,
+        password_hash: passwordHash,
+        role: 'teacher',
+        name
+      });
+
+      res.status(201).json({
+        message: 'Teacher created successfully.',
+        credentials: { email, password },
+        user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async resetTeacherPassword(req, res, next) {
+    try {
+      const { id } = req.params;
+      const user = await UserModel.findById(id);
+      if (!user || user.role !== 'teacher') {
+        return res.status(404).json({ error: 'Teacher not found.' });
+      }
+      if (user.school_id !== req.user.school_id && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Forbidden.' });
+      }
+
+      const password = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+
+      res.json({ message: 'Password reset successfully.', credentials: { email: user.email, password } });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async listTeacherUsers(req, res, next) {
+    try {
+      const result = await pool.query(
+        'SELECT id, email, name, role, is_active, created_at FROM users WHERE school_id = $1 AND role = $2 ORDER BY name',
+        [req.user.school_id, 'teacher']
+      );
+      res.json(result.rows);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateProfile(req, res, next) {
+    try {
+      const { name, email } = req.body;
+      if (!name && !email) {
+        return res.status(400).json({ error: 'Nothing to update.' });
+      }
+
+      if (email) {
+        const existing = await UserModel.findByEmail(email);
+        if (existing && existing.id !== req.user.id) {
+          return res.status(409).json({ error: 'Email already in use.' });
+        }
+      }
+
+      const fields = [];
+      const values = [];
+      let idx = 1;
+      if (name) { fields.push(`name = $${idx++}`); values.push(name); }
+      if (email) { fields.push(`email = $${idx++}`); values.push(email); }
+      values.push(req.user.id);
+
+      await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+      res.json({ message: 'Profile updated.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current and new password are required.' });
+      }
+
+      const user = await UserModel.findById(req.user.id);
+      const isValid = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Current password is incorrect.' });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, req.user.id]);
+      res.json({ message: 'Password changed successfully.' });
+    } catch (err) {
+      next(err);
+    }
   }
 };

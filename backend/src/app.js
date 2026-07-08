@@ -12,6 +12,7 @@ import subjectRoutes from './routes/subject.routes.js';
 import scoreRoutes from './routes/score.routes.js';
 import teacherRoutes from './routes/teacher.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import portalRoutes from './routes/portal.routes.js';
 
 const app = express();
 
@@ -56,6 +57,8 @@ app.use('/api/teachers', teacherRoutes);
 app.use('/teachers', teacherRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/reports', reportRoutes);
+app.use('/api/portal', portalRoutes);
+app.use('/portal', portalRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -27,5 +27,30 @@ export const authService = {
   async getMe() {
     const { data } = await api.get('/auth/me');
     return data;
+  },
+
+  async createTeacher(name, email) {
+    const { data } = await api.post('/auth/create-teacher', { name, email });
+    return data;
+  },
+
+  async resetTeacherPassword(id) {
+    const { data } = await api.put(`/auth/teacher/${id}/reset-password`);
+    return data;
+  },
+
+  async listTeachers() {
+    const { data } = await api.get('/auth/teachers');
+    return data;
+  },
+
+  async updateProfile(name, email) {
+    const { data } = await api.put('/auth/profile', { name, email });
+    return data;
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const { data } = await api.put('/auth/password', { currentPassword, newPassword });
+    return data;
   }
 };

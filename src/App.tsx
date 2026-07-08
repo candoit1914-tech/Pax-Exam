@@ -9,12 +9,27 @@ import { ClassesSubjectsScreen } from './screens/ClassesSubjects';
 import { ScoreEntryScreen } from './screens/Scores';
 import { ReportsScreen } from './screens/Reports';
 import { SettingsScreen } from './screens/Settings';
+import { TeacherManagementScreen } from './screens/TeacherManagement';
+import { StudentPortalScreen } from './screens/StudentPortal';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) return null;
   if (!isAuthenticated && localStorage.getItem('auth') !== 'true') {
     return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated && localStorage.getItem('auth') !== 'true') {
+    return <Navigate to="/login" replace />;
+  }
+  const role = user?.role || JSON.parse(localStorage.getItem('user') || '{}').role;
+  if (role !== 'super_admin' && role !== 'school_admin') {
+    return <Navigate to="/scores" replace />;
   }
   return <>{children}</>;
 };
@@ -27,11 +42,13 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/login" replace />} />
             <Route path="login" element={<LoginScreen />} />
-            <Route path="dashboard" element={<ProtectedRoute><DashboardScreen /></ProtectedRoute>} />
-            <Route path="students" element={<ProtectedRoute><StudentsScreen /></ProtectedRoute>} />
-            <Route path="classes" element={<ProtectedRoute><ClassesSubjectsScreen /></ProtectedRoute>} />
+            <Route path="student-portal" element={<StudentPortalScreen />} />
+            <Route path="dashboard" element={<AdminRoute><DashboardScreen /></AdminRoute>} />
+            <Route path="students" element={<AdminRoute><StudentsScreen /></AdminRoute>} />
+            <Route path="classes" element={<AdminRoute><ClassesSubjectsScreen /></AdminRoute>} />
             <Route path="scores" element={<ProtectedRoute><ScoreEntryScreen /></ProtectedRoute>} />
             <Route path="reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
+            <Route path="teachers" element={<AdminRoute><TeacherManagementScreen /></AdminRoute>} />
             <Route path="settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
           </Route>
         </Routes>

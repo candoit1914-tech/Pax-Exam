@@ -3,7 +3,9 @@ import { GlassCard, GlassButton, GlassInput, GlassSelect } from '../components/u
 import { exportBackup, restoreDatabase } from '../utils/backup';
 import { exportStudentsToCSV, exportScoresToCSV, importCsvFile } from '../utils/csv';
 import { motion, AnimatePresence } from 'motion/react';
-import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2 } from 'lucide-react';
+import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { authService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 import { calculateAverage, rankStudents } from '../utils/ranking';
 import { BroadsheetBuilder } from '../components/BroadsheetBuilder';
 import html2pdf from 'html2pdf.js';
@@ -25,6 +27,36 @@ export const SettingsScreen = () => {
   const [profile, setProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
   const [importProgress, setImportProgress] = useState<{processed: number, total: number} | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
+
+  const { user, refreshUser } = useAuth();
+  const [myName, setMyName] = useState(user?.name || '');
+  const [myEmail, setMyEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [profileStatus, setProfileStatus] = useState('');
+
+  const handleUpdateProfile = async () => {
+    try {
+      await authService.updateProfile(myName, myEmail);
+      await refreshUser();
+      setProfileStatus('Profile updated.');
+    } catch (err: any) {
+      setProfileStatus(err.response?.data?.error || 'Failed to update.');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) { setProfileStatus('Fill all fields.'); return; }
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setProfileStatus('Password changed.');
+    } catch (err: any) {
+      setProfileStatus(err.response?.data?.error || 'Failed to change password.');
+    }
+  };
 
   // Broadsheet Modal State
   const [isBroadsheetModalOpen, setIsBroadsheetModalOpen] = useState(false);
@@ -279,6 +311,41 @@ export const SettingsScreen = () => {
 
       <div className="flex flex-col gap-6">
         
+        {/* My Profile */}
+        <GlassCard droplet className="p-4 sm:p-5 border-sky-200">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-10 h-10 bg-sky-500/10 border border-sky-500/30 rounded-2xl flex items-center justify-center shrink-0">
+              <User className="text-sky-600" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">My Profile</h2>
+              <p className="text-[11px] font-medium text-slate-600">Update your name, email, or password.</p>
+            </div>
+          </div>
+          {profileStatus && <p className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg mb-3">{profileStatus}</p>}
+          <div className="flex flex-col gap-3">
+            <GlassInput label="Name" value={myName} onChange={e => setMyName(e.target.value)} sizing="sm" />
+            <GlassInput label="Email" type="email" value={myEmail} onChange={e => setMyEmail(e.target.value)} sizing="sm" />
+            <GlassButton sizing="sm" onClick={handleUpdateProfile}><Save size={14} /> Save Changes</GlassButton>
+          </div>
+          <div className="border-t border-white/30 my-4 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Lock size={16} className="text-slate-500" />
+              <span className="text-sm font-bold text-slate-700">Change Password</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <GlassInput label="Current Password" type={showPw ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} sizing="sm" />
+              <div className="relative">
+                <GlassInput label="New Password" type={showPw ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} sizing="sm" />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-[60%] -translate-y-1/2 text-slate-500">
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <GlassButton sizing="sm" variant="secondary" onClick={handleChangePassword}><Lock size={14} /> Update Password</GlassButton>
+            </div>
+          </div>
+        </GlassCard>
+
         {/* School Profile */}
         <GlassCard droplet className="p-4 sm:p-5 border-indigo-200">
           <div className="flex items-start gap-4 mb-6">
@@ -508,8 +575,21 @@ export const SettingsScreen = () => {
           </GlassButton>
         </GlassCard>
 
+        {/* Logout */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={async () => {
+              await authService.logout();
+              window.location.href = '/login';
+            }}
+            className="text-red-600 font-black uppercase text-sm tracking-widest hover:bg-red-50 px-4 py-2 rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+
         {/* Reset App */}
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center mt-4 pb-8">
           <button 
             onClick={handleReset}
             className="text-black font-black uppercase text-sm tracking-widest hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors"
