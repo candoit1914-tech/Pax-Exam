@@ -8,10 +8,11 @@ export const authService = {
 
   async logout() {
     try { await api.post('/auth/logout'); } catch { }
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('auth');
+    localStorage.removeItem('appVersion');
   },
 
   async register(userData) {

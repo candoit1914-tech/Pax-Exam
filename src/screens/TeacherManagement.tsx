@@ -99,9 +99,9 @@ export const TeacherManagementScreen = () => {
       {teachers.length === 0 ? (
         <p className="text-center text-slate-500 text-sm py-8">No teachers yet. Add one above.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
           {teachers.map((t: any) => (
-            <GlassCard key={t.id} className="p-4 flex justify-between items-center">
+            <GlassCard key={t.id} className="p-4 flex justify-between items-center md:flex-col md:items-start md:gap-3">
               <div>
                 <p className="font-bold text-slate-800 text-sm">{t.name}</p>
                 <p className="text-slate-500 text-xs">{t.email}</p>

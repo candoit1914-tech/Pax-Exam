@@ -1,112 +1,41 @@
-import db from '../database/db';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
+import { studentService } from '../services/studentService';
+import { classService } from '../services/classService';
+import { subjectService } from '../services/subjectService';
+import { scoreService } from '../services/scoreService';
+import { teacherService } from '../services/teacherService';
 
 export const exportBackup = async () => {
   const filename = `Ok20_Backup_${new Date().toISOString().split('T')[0]}.json`;
 
   try {
+    const [students, teachers, classes, subjects, scores] = await Promise.all([
+      studentService.getAll(),
+      teacherService.getAll(),
+      classService.getAll(),
+      subjectService.getAll(),
+      scoreService.getAll(),
+    ]);
+
+    const backupData = {
+      students, teachers, classes, subjects, scores,
+      schoolProfile: JSON.parse(localStorage.getItem('schoolProfile') || 'null'),
+      _timestamp: new Date().toISOString()
+    };
+
+    const json = JSON.stringify(backupData);
+
     if (Capacitor.isNativePlatform()) {
-      // 1. Initialize file with start of JSON
       await Filesystem.writeFile({
         path: filename,
-        data: '{"_timestamp":"' + new Date().toISOString() + '",',
-        directory: Directory.Cache,
+        data: json,
+        directory: Directory.Documents,
         encoding: Encoding.UTF8
       });
-
-      // 2. Append school profile
-      const sp = localStorage.getItem('schoolProfile') || 'null';
-      await Filesystem.appendFile({
-        path: filename,
-        data: '"schoolProfile":' + sp + ',',
-        directory: Directory.Cache,
-        encoding: Encoding.UTF8
-      });
-
-      // 3. Process tables sequentially and in batches to prevent memory spikes
-      const tables = ['students', 'teachers', 'classes', 'subjects', 'scores'];
-
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        await Filesystem.appendFile({
-          path: filename,
-          data: '"' + table + '":[',
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8
-        });
-
-        const allRows = await (db as any)[table].toArray();
-        // Use a smaller batch size for students because of photos
-        const batchSize = table === 'students' ? 5 : 50;
-
-        for (let j = 0; j < allRows.length; j += batchSize) {
-          const batch = allRows.slice(j, j + batchSize);
-          let batchString = batch.map(row => JSON.stringify(row)).join(',');
-
-          if (j + batchSize < allRows.length) {
-            batchString += ',';
-          }
-
-          await Filesystem.appendFile({
-            path: filename,
-            data: batchString,
-            directory: Directory.Cache,
-            encoding: Encoding.UTF8
-          });
-
-          // Yield to UI thread
-          await new Promise(resolve => setTimeout(resolve, 0));
-        }
-
-        await Filesystem.appendFile({
-          path: filename,
-          data: i < tables.length - 1 ? '],' : ']',
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8
-        });
-      }
-
-      // 4. Close JSON
-      await Filesystem.appendFile({
-        path: filename,
-        data: '}',
-        directory: Directory.Cache,
-        encoding: Encoding.UTF8
-      });
-
-      // 5. Get URI and Share
-      const uriResult = await Filesystem.getUri({
-        path: filename,
-        directory: Directory.Cache
-      });
-
-      await Share.share({
-        title: 'Ok20 School Backup',
-        text: 'Full backup of all school records.',
-        url: uriResult.uri,
-        dialogTitle: 'Save Backup'
-      });
-
       return true;
     } else {
-      // Web logic - build standard object and download
-      const [students, teachers, classes, subjects, scores] = await Promise.all([
-        db.students.toArray(),
-        db.teachers.toArray(),
-        db.classes.toArray(),
-        db.subjects.toArray(),
-        db.scores.toArray()
-      ]);
-
-      const backupData = {
-        students, teachers, classes, subjects, scores,
-        schoolProfile: JSON.parse(localStorage.getItem('schoolProfile') || 'null'),
-        _timestamp: new Date().toISOString()
-      };
-
-      const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
+      const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.body.appendChild(document.createElement('a'));
       a.href = url;
@@ -122,6 +51,22 @@ export const exportBackup = async () => {
   }
 };
 
+const getId = (item: any) => item.id ?? item._id;
+
+const deleteAll = async (items: any[], service: { delete: (id: any) => Promise<any> }) => {
+  if (!items?.length) return;
+  const ids = items.map(getId).filter(Boolean);
+  if (!ids.length) return;
+  await Promise.all(ids.map(id => service.delete(id).catch(e => console.warn('Delete failed:', id, e))));
+};
+
+const createBatch = async (items: any[], service: { create: (item: any) => Promise<any> }) => {
+  if (!items?.length) return;
+  for (const item of items) {
+    try { await service.create(item); } catch (e) { console.warn('Skipping item:', item, e); }
+  }
+};
+
 export const restoreDatabase = async (fileOrData: any) => {
   try {
     let data;
@@ -134,25 +79,37 @@ export const restoreDatabase = async (fileOrData: any) => {
 
     if (!data || typeof data !== 'object') throw new Error("Invalid format");
 
-    await db.transaction('rw', [db.students, db.teachers, db.classes, db.subjects, db.scores], async () => {
-      await Promise.all([
-        db.students.clear(),
-        db.teachers.clear(),
-        db.classes.clear(),
-        db.subjects.clear(),
-        db.scores.clear()
-      ]);
+    // 1. Fetch existing data from server
+    const [existingScores, existingStudents, existingSubjects, existingClasses, existingTeachers] = await Promise.all([
+      scoreService.getAll(),
+      studentService.getAll(),
+      subjectService.getAll(),
+      classService.getAll(),
+      teacherService.getAll(),
+    ]);
 
-      if (data.students?.length) await db.students.bulkAdd(data.students);
-      if (data.teachers?.length) await db.teachers.bulkAdd(data.teachers);
-      if (data.classes?.length) await db.classes.bulkAdd(data.classes);
-      if (data.subjects?.length) await db.subjects.bulkAdd(data.subjects);
-      if (data.scores?.length) await db.scores.bulkAdd(data.scores);
-    });
+    // 2. Delete existing data (children first to respect foreign keys)
+    await deleteAll(existingScores, scoreService);
+    await deleteAll(existingStudents, studentService);
+    await deleteAll(existingSubjects, subjectService);
+    await deleteAll(existingClasses, classService);
+    await deleteAll(existingTeachers, teacherService);
 
+    // 3. Restore school profile
     if (data.schoolProfile) {
       localStorage.setItem('schoolProfile', JSON.stringify(data.schoolProfile));
     }
+
+    // 4. Create backed-up data (parents first)
+    await createBatch(data.teachers, teacherService);
+    await createBatch(data.classes, classService);
+    await createBatch(data.subjects, subjectService);
+    await createBatch(data.students, studentService);
+
+    if (data.scores?.length) {
+      await scoreService.bulkUpsert(data.scores);
+    }
+
     return true;
   } catch (error: any) {
     console.error("Restore failed:", error);

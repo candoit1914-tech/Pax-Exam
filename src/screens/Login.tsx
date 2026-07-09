@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
@@ -14,10 +14,11 @@ export const LoginScreen = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    navigate('/dashboard', { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,100 +38,133 @@ export const LoginScreen = () => {
     }
   };
 
-  return (
-    <div className="mobile-container flex items-center justify-center p-6 min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,_#e0c3fc_0%,_#8ec5fc_100%)]"></div>
-      <div className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] bg-white/40 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-300/30 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-200/20 rounded-full blur-[80px] pointer-events-none"></div>
+  const renderLoginForm = (sizing: 'sm' | 'md') => (
+    <GlassCard droplet className={sizing === 'sm' ? 'p-6 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden' : 'p-8 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden'}>
+      <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 relative z-10">
+        <div className="flex flex-col items-center gap-2 w-full">
+          <span className="text-slate-700 font-bold uppercase tracking-[0.2em] mb-2" style={{ fontSize: sizing === 'sm' ? '10px' : '12px' }}>Sign In</span>
+          <div className="w-full flex flex-col gap-4">
+            <GlassInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="admin@school.com"
+              sizing={sizing}
+              required
+            />
+            <div className="relative">
+              <GlassInput
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter password"
+                sizing={sizing}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-[60%] -translate-y-1/2 text-slate-500 hover:text-slate-700"
+              >
+                {showPassword ? <EyeOff size={sizing === 'sm' ? 16 : 18} /> : <Eye size={sizing === 'sm' ? 16 : 18} />}
+              </button>
+            </div>
+          </div>
+        </div>
 
+        {error && (
+          <p className="text-red-600 text-xs font-bold bg-red-50 w-full text-center py-2 rounded-lg">{error}</p>
+        )}
+
+        <div className="w-full pt-2">
+          <GlassButton type="submit" className="w-full justify-center" disabled={isLoading}>
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </GlassButton>
+        </div>
+
+        <Link to="/student-portal" className="flex items-center justify-center gap-2 w-full py-2 text-[11px] font-bold text-blue-700 bg-blue-50/50 rounded-xl border border-blue-200/60 hover:bg-blue-100/50 transition-all">
+          <GraduationCap size={16} />
+          Student Portal — View Report
+        </Link>
+      </form>
+    </GlassCard>
+  );
+
+  const mobileForm = (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 80, damping: 20 }}
+      className="w-full max-w-sm relative z-10"
+    >
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 80, damping: 20 }}
-        className="w-full max-w-sm relative z-10"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="text-center mb-6"
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-7xl font-black text-slate-900 mb-4 drop-shadow-sm">
-            Ok20
-          </h1>
-          <p className="text-blue-700 font-bold text-[10px] uppercase tracking-[0.4em] leading-relaxed">School Examination Management System</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
-        >
-           <GlassCard droplet className="p-6 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
-            <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 relative z-10">
-              <div className="flex flex-col items-center gap-2 w-full">
-                <span className="text-slate-700 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Secure Login</span>
-                <div className="w-full flex flex-col gap-4">
-                  <GlassInput
-                    label="Email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="admin@school.com"
-                    sizing="sm"
-                    required
-                  />
-                  <div className="relative">
-                    <GlassInput
-                      label="Password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Enter password"
-                      sizing="sm"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-[60%] -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-red-600 text-xs font-bold bg-red-50 w-full text-center py-2 rounded-lg">{error}</p>
-              )}
-
-              <div className="w-full pt-2">
-                <GlassButton type="submit" className="w-full justify-center" disabled={isLoading}>
-                  {isLoading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-                  {isLoading ? 'Signing in...' : 'Sign In'}
-                </GlassButton>
-              </div>
-
-              <div className="w-full pt-2">
-                <div className="h-[1px] w-full bg-slate-200/50 mb-4"></div>
-                <p className="text-[9px] text-slate-500 text-center uppercase tracking-[0.3em] font-medium">Cloud-Based School Management System</p>
-              </div>
-
-              <Link to="/student-portal" className="flex items-center justify-center gap-2 w-full py-2 text-[11px] font-bold text-blue-700 bg-blue-50/50 rounded-xl border border-blue-200/60 hover:bg-blue-100/50 transition-all">
-                <GraduationCap size={16} />
-                Student Portal — View Report
-              </Link>
-
-              <div className="w-full p-3 rounded-xl bg-amber-50/50 border border-amber-200/60">
-                <p className="text-[10px] font-bold text-amber-700 text-center uppercase tracking-[0.2em]">Teachers</p>
-                <p className="text-[9px] text-slate-500 text-center">Use the credentials provided by your admin.</p>
-              </div>
-            </form>
-          </GlassCard>
-        </motion.div>
+        <h1 className="text-7xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
+          Ok20
+        </h1>
+        <p className="text-blue-700 font-bold text-[10px] uppercase tracking-[0.4em] leading-relaxed">School Examination Management System</p>
       </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+      >
+        {renderLoginForm('sm')}
+      </motion.div>
+    </motion.div>
+  );
+
+  const desktopForm = (
+    <div className="flex items-center gap-16 lg:gap-24 max-w-6xl w-full">
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 80, damping: 20 }}
+        className="hidden lg:flex flex-col flex-1"
+      >
+        <h1 className="text-8xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent leading-none" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
+          Ok20
+        </h1>
+        <p className="text-blue-700 font-bold text-sm uppercase tracking-[0.3em] mt-4">School Examination<br />Management System</p>
+        <p className="text-slate-600 text-sm mt-8 leading-relaxed max-w-md">
+          Comprehensive platform for managing student scores, generating reports, and tracking academic performance across classes and subjects.
+        </p>
+      </motion.div>
+      <div className="w-full max-w-md shrink-0">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, type: "spring", stiffness: 100 }}
+        >
+          {renderLoginForm('md')}
+        </motion.div>
+      </div>
     </div>
+  );
+
+  return (
+    <>
+      <div className="mobile-container md:hidden flex items-center justify-center p-6 min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,_#e0c3fc_0%,_#8ec5fc_100%)]"></div>
+        <div className="absolute top-[-5%] left-[-5%] w-[400px] h-[400px] bg-white/40 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-300/30 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-200/20 rounded-full blur-[80px] pointer-events-none"></div>
+        {mobileForm}
+      </div>
+      <div className="hidden md:flex min-h-screen w-full relative overflow-hidden bg-[radial-gradient(circle_at_0%_0%,_#e0c3fc_0%,_#8ec5fc_100%)]">
+        <div className="absolute top-[-5%] left-[-5%] w-[600px] h-[600px] bg-white/40 rounded-full blur-[150px] animate-pulse pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[800px] bg-blue-300/30 rounded-full blur-[180px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
+        <div className="flex-1 flex items-center justify-center p-12">
+          {desktopForm}
+        </div>
+      </div>
+    </>
   );
 };

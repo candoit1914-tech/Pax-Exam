@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GlassCard, GlassButton, GlassInput, GlassSelect } from '../components/ui/Glass';
 import { exportBackup, restoreDatabase } from '../utils/backup';
 import { exportStudentsToCSV, exportScoresToCSV, importCsvFile } from '../utils/csv';
@@ -13,6 +14,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { resizeImage } from '../utils/images';
+import db from '../database/db';
 import { studentService } from '../services/studentService';
 import { classService } from '../services/classService';
 import { subjectService } from '../services/subjectService';
@@ -28,7 +30,8 @@ export const SettingsScreen = () => {
   const [importProgress, setImportProgress] = useState<{processed: number, total: number} | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
-  const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const { user, refreshUser, logout } = useAuth();
   const [myName, setMyName] = useState(user?.name || '');
   const [myEmail, setMyEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -264,7 +267,7 @@ export const SettingsScreen = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (window.confirm("WARNING: Restoring a backup will erase ALL current data on this device and replace it with the backup. Proceed?")) {
+    if (window.confirm("WARNING: Restoring a backup will erase ALL current data on the server and replace it with the backup. This cannot be undone. Proceed?")) {
       restoreDatabase(file).then(() => {
         showStatus('success', 'Database restored successfully!');
         const p = localStorage.getItem('schoolProfile');
@@ -284,8 +287,10 @@ export const SettingsScreen = () => {
 
   const handleReset = async () => {
     if (window.confirm("Are you sure you want to absolute wipe all data? This will reset the app to an entirely fresh state. This cannot be undone.")) {
-      localStorage.clear();
-      window.location.reload();
+      await db.delete();
+      const keys = ['accessToken', 'refreshToken', 'user', 'auth', 'appVersion', 'schoolProfile'];
+      keys.forEach(key => localStorage.removeItem(key));
+      navigate('/login', { replace: true });
     }
   };
 
@@ -539,7 +544,7 @@ export const SettingsScreen = () => {
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept="application/json,application/zip" 
+            accept="application/json,application/zip,.json,.zip" 
             className="hidden" 
           />
           <GlassButton 
@@ -579,8 +584,8 @@ export const SettingsScreen = () => {
         <div className="flex justify-center mt-4">
           <button
             onClick={async () => {
-              await authService.logout();
-              window.location.href = '/login';
+              await logout();
+              navigate('/login', { replace: true });
             }}
             className="text-red-600 font-black uppercase text-sm tracking-widest hover:bg-red-50 px-4 py-2 rounded-lg transition-colors"
           >

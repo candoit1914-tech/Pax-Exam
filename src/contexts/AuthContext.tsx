@@ -30,34 +30,51 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const APP_VERSION = '2.0.0';
+
+const APP_STORAGE_KEYS = ['accessToken', 'refreshToken', 'user', 'auth', 'appVersion'];
+
+function clearAppStorage() {
+  APP_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      if (token && storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('refreshToken');
+      try {
+        const storedVersion = localStorage.getItem('appVersion');
+        if (storedVersion !== APP_VERSION) {
+          clearAppStorage();
+          localStorage.setItem('appVersion', APP_VERSION);
+          return;
         }
+
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          setUser(user);
+        }
+      } catch (e) {
+        console.error(e);
+        clearAppStorage();
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initAuth();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await authService.login(email, password);
-    localStorage.setItem('token', data.accessToken);
+    localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('auth', 'true');
+    localStorage.setItem('appVersion', APP_VERSION);
     setUser(data.user);
   }, []);
 

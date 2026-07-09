@@ -13,9 +13,9 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const accessToken = localStorage.getItem('accessToken');
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
@@ -32,16 +32,17 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error('No refresh token');
 
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('accessToken', data.accessToken);
         if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
       } catch {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         localStorage.removeItem('auth');
+        localStorage.removeItem('appVersion');
         window.location.href = '/login';
         return Promise.reject(error);
       }

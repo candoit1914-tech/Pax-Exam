@@ -74,49 +74,35 @@ export const DashboardScreen = () => {
 
   return (
     <div className="p-6 pt-4 flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0 }}>
-          <GlassCard className="p-2 flex items-center justify-between relative overflow-hidden group gap-2">
-            <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg ${stats[0].bg} flex items-center justify-center shrink-0`}>
-                {React.createElement(stats[0].icon, { className: stats[0].color, size: 16 })}
-              </div>
-              <p className="text-slate-700 text-[10px] font-bold uppercase tracking-widest">{stats[0].label}</p>
-            </div>
-            <p className="text-xl font-black text-slate-900 leading-tight pr-2">{stats[0].value}</p>
-            <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
-          </GlassCard>
-        </motion.div>
-        <div className="grid grid-cols-2 gap-2">
-          {stats.slice(1).map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (i + 1) * 0.1 }}>
-              <GlassCard className="p-2 flex items-center justify-between relative overflow-hidden group gap-2 h-full">
-                <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
-                    {React.createElement(stat.icon, { className: stat.color, size: 16 })}
-                  </div>
-                  <p className="text-slate-700 text-[10px] font-bold uppercase tracking-widest">{stat.label}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
+        {stats.map((stat, i) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}>
+            <GlassCard className="p-2 md:p-3 flex items-center justify-between relative overflow-hidden group gap-2">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
+                  {React.createElement(stat.icon, { className: stat.color, size: 16 })}
                 </div>
-                <p className="text-xl font-black text-slate-900 leading-tight pr-1">{stat.value}</p>
-                <div className="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
-              </GlassCard>
-            </motion.div>
-          ))}
-        </div>
+                <p className="text-slate-700 text-[10px] md:text-xs font-bold uppercase tracking-widest">{stat.label}</p>
+              </div>
+              <p className="text-xl md:text-2xl font-black text-slate-900 leading-tight pr-2">{stat.value}</p>
+              <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
+            </GlassCard>
+          </motion.div>
+        ))}
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-3 mt-2">
-        <GlassCard className="p-2 relative overflow-hidden flex items-center justify-between">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col md:flex-row gap-3 mt-2">
+        <GlassCard className="p-2 md:p-3 relative overflow-hidden flex items-center justify-between flex-1">
           <div className="flex items-center gap-3 relative z-10 w-full">
-            <div className="w-8 h-8 bg-yellow-400/20 border border-yellow-400/50 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-400/20 border border-yellow-400/50 rounded-lg flex items-center justify-center shrink-0">
               <Trophy className="text-yellow-600" size={16} />
             </div>
             <div className="flex-1">
-              <p className="text-[9px] text-yellow-600 font-bold uppercase tracking-widest mb-0.5">Top Performer</p>
+              <p className="text-[9px] md:text-[10px] text-yellow-600 font-bold uppercase tracking-widest mb-0.5">Top Performer</p>
               {topPerformer && topPerformer.average > 0 ? (
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-slate-900 truncate">{topPerformer.name}</p>
-                  <p className="text-emerald-600 text-[10px] font-black">{topPerformer.average.toFixed(2)}%</p>
+                  <p className="text-xs md:text-sm font-bold text-slate-900 truncate">{topPerformer.name}</p>
+                  <p className="text-emerald-600 text-[10px] md:text-xs font-black">{topPerformer.average.toFixed(2)}%</p>
                 </div>
               ) : (
                 <p className="text-slate-500 italic text-[10px]">No scores yet</p>
@@ -124,17 +110,17 @@ export const DashboardScreen = () => {
             </div>
           </div>
         </GlassCard>
-        <GlassCard className="p-2 relative overflow-hidden flex items-center justify-between">
+        <GlassCard className="p-2 md:p-3 relative overflow-hidden flex items-center justify-between flex-1">
           <div className="flex items-center gap-3 relative z-10 w-full">
-            <div className="w-8 h-8 bg-red-400/20 border border-red-400/50 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-red-400/20 border border-red-400/50 rounded-lg flex items-center justify-center shrink-0">
               <TrendingDown className="text-red-500" size={16} />
             </div>
             <div className="flex-1">
-              <p className="text-[9px] text-red-500 font-bold uppercase tracking-widest mb-0.5">Needs Attention</p>
+              <p className="text-[9px] md:text-[10px] text-red-500 font-bold uppercase tracking-widest mb-0.5">Needs Attention</p>
               {lowestPerformer ? (
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-slate-900 truncate">{lowestPerformer.name}</p>
-                  <p className="text-red-600 text-[10px] font-black">{lowestPerformer.average.toFixed(2)}%</p>
+                  <p className="text-xs md:text-sm font-bold text-slate-900 truncate">{lowestPerformer.name}</p>
+                  <p className="text-red-600 text-[10px] md:text-xs font-black">{lowestPerformer.average.toFixed(2)}%</p>
                 </div>
               ) : (
                 <p className="text-slate-500 italic text-[10px]">No scores yet</p>

@@ -1,9 +1,14 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import authRoutes from './routes/auth.routes.js';
 import schoolRoutes from './routes/school.routes.js';
 import studentRoutes from './routes/student.routes.js';
@@ -23,8 +28,12 @@ const limiter = rateLimit({
 });
 
 app.use(helmet());
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : '*';
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -59,6 +68,18 @@ app.use('/api/reports', reportRoutes);
 app.use('/reports', reportRoutes);
 app.use('/api/portal', portalRoutes);
 app.use('/portal', portalRoutes);
+
+const distPath = path.join(__dirname, '..', '..', 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    } else {
+      next();
+    }
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
