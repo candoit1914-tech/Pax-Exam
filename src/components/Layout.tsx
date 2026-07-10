@@ -162,7 +162,7 @@ export const Layout: React.FC = () => {
       <div className="md:hidden mobile-container flex flex-col">
         <div className="sticky top-0 z-40 bg-white/40 backdrop-blur-3xl border-b border-white/40 shadow-sm p-4 px-6 mb-4 flex justify-between items-center transition-all shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
           <div>
-             <h1 className="text-2xl font-black tracking-tight text-slate-900">{pageTitle}</h1>
+             <h1 className="text-2xl font-black tracking-tight text-slate-900 transition-all duration-300">{pageTitle}</h1>
              <p className="text-blue-600 font-bold uppercase tracking-widest text-[9px] drop-shadow-sm">{currentItem?.subtitle || 'System & Profile Configuration'}</p>
           </div>
           <div className="flex items-center gap-1">
@@ -228,7 +228,7 @@ export const Layout: React.FC = () => {
                       transition={{ type: "spring", stiffness: 200, damping: 20 }}
                     />
                   )}
-                  <div className="relative">
+                  <div className="group-hover:scale-110 transition-transform duration-200">
                     <Icon size={24} className={cn("transition-all duration-300", isActive ? "text-blue-700 scale-110 drop-shadow-md" : "text-slate-600 group-hover:scale-105")} />
                     {isActive && (
                       <motion.div

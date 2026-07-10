@@ -21,7 +21,7 @@ async function runMigrations() {
 }
 
 async function seedAdmin() {
-  const email = process.env.DEFAULT_ADMIN_EMAIL || 'admin@school.com';
+  const email = process.env.DEFAULT_ADMIN_EMAIL || 'okk@dokota.com';
   const password = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@12345';
 
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);

@@ -39,7 +39,7 @@ export const LoginScreen = () => {
   };
 
   const renderLoginForm = (sizing: 'sm' | 'md') => (
-    <GlassCard droplet className={sizing === 'sm' ? 'p-6 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden' : 'p-8 border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden'}>
+    <GlassCard droplet className={`${sizing === 'sm' ? 'p-6' : 'p-8'} border-white/60 bg-white/20 backdrop-blur-3xl shadow-2xl relative overflow-hidden focus-within:animate-pulse-glow`}>
       <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 relative z-10">
         <div className="flex flex-col items-center gap-2 w-full">
           <span className="text-slate-700 font-bold uppercase tracking-[0.2em] mb-2" style={{ fontSize: sizing === 'sm' ? '10px' : '12px' }}>Sign In</span>
@@ -49,7 +49,7 @@ export const LoginScreen = () => {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin@school.com"
+              placeholder="okk@dokota.com"
               sizing={sizing}
               required
             />
@@ -106,7 +106,7 @@ export const LoginScreen = () => {
         transition={{ delay: 0.2, duration: 0.5 }}
         className="text-center mb-6"
       >
-        <h1 className="text-7xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
+        <h1 className="text-7xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent animate-float" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
           Ok20
         </h1>
         <p className="text-blue-700 font-bold text-[10px] uppercase tracking-[0.4em] leading-relaxed">School Examination Management System</p>
@@ -129,7 +129,7 @@ export const LoginScreen = () => {
         transition={{ type: "spring", stiffness: 80, damping: 20 }}
         className="hidden lg:flex flex-col flex-1"
       >
-        <h1 className="text-8xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent leading-none" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
+        <h1 className="text-8xl font-black mb-4 bg-gradient-to-b from-yellow-200 via-amber-400 to-amber-700 bg-clip-text text-transparent leading-none animate-float" style={{ textShadow: '0 1px 0 #a16207, 0 2px 0 #854d0e, 0 4px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(218,165,32,0.25)' }}>
           Ok20
         </h1>
         <p className="text-blue-700 font-bold text-sm uppercase tracking-[0.3em] mt-4">School Examination<br />Management System</p>

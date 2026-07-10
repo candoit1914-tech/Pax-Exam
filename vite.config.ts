@@ -26,5 +26,21 @@ export default defineConfig(({mode}) => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-motion': ['motion'],
+            'vendor-ui': ['recharts', 'lucide-react'],
+            'vendor-utils': ['axios', 'papaparse', 'xlsx', 'date-fns'],
+            'vendor-pdf': ['html2pdf.js', 'jspdf'],
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000,
+      target: 'es2020',
+      minify: 'esbuild',
+    },
   };
 });

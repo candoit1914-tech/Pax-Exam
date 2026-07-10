@@ -2,9 +2,10 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GlassCard, GlassButton, GlassInput, GlassSelect } from '../components/ui/Glass';
 import { exportBackup, restoreDatabase } from '../utils/backup';
-import { exportStudentsToCSV, exportScoresToCSV, importCsvFile } from '../utils/csv';
+import { exportStudentsToCSV, exportScoresToCSV } from '../utils/csv';
+import { importData, ImportEntityType, getTemplateData, getTemplateFilename } from '../utils/importData';
 import { motion, AnimatePresence } from 'motion/react';
-import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2, User, Lock, Eye, EyeOff, Users, UserCheck, GraduationCap, BookOpen, ClipboardList } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateAverage, rankStudents } from '../utils/ranking';
@@ -22,12 +23,14 @@ import { scoreService } from '../services/scoreService';
 
 export const SettingsScreen = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const csvInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   const broadsheetRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<{type: 'success' | 'error' | null, message: string}>({ type: null, message: '' });
   
   const [profile, setProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
   const [importProgress, setImportProgress] = useState<{processed: number, total: number} | null>(null);
+  const [importModalType, setImportModalType] = useState<ImportEntityType | null>(null);
+  const [importResult, setImportResult] = useState<{ type: ImportEntityType; result: ImportResult } | null>(null);
   const [restoreProgress, setRestoreProgress] = useState<{phase: string, current: number, total: number} | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
@@ -193,15 +196,19 @@ export const SettingsScreen = () => {
     }
   };
 
-  const handleCsvChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !importModalType) return;
 
     setImportProgress({ processed: 0, total: 0 });
-    const result = await importCsvFile(file, (processed, total) => {
+    setImportResult(null);
+
+    const result = await importData(file, importModalType, (processed, total) => {
       setImportProgress({ processed, total });
     });
+
     setImportProgress(null);
+    setImportResult({ type: importModalType, result });
 
     if (result.success) {
       showStatus('success', result.message);
@@ -209,7 +216,30 @@ export const SettingsScreen = () => {
       showStatus('error', result.message);
     }
 
-    if(csvInputRef.current) csvInputRef.current.value = '';
+    if (importFileInputRef.current) importFileInputRef.current.value = '';
+  };
+
+  const handleDownloadTemplate = (entityType: ImportEntityType) => {
+    const data = getTemplateData(entityType);
+    const filename = getTemplateFilename(entityType);
+    const headers = Object.keys(data[0]);
+    const csv = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(h => {
+          const val = String(row[h]);
+          return val.includes(',') || val.includes('"') || val.includes('\n') ? `"${val.replace(/"/g, '""')}"` : val;
+        }).join(',')
+      )
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -469,52 +499,88 @@ export const SettingsScreen = () => {
           </form>
         </GlassCard>
 
-        {/* CSV Data Management */}
+        {/* Data Import & Export */}
         <GlassCard droplet className="p-4 sm:p-5 border-emerald-200">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center shrink-0">
               <FileSpreadsheet className="text-emerald-600" size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1">CSV Management</h2>
-              <p className="text-[11px] font-medium text-slate-600">Import and export tabular data (.csv files) separate from complete backups.</p>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Data Import & Export</h2>
+              <p className="text-[11px] font-medium text-slate-600">Import students, teachers, classes, subjects, and scores from CSV, Excel, JSON, TXT files.</p>
             </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-             <GlassButton onClick={() => handleExportCSV('students')} className="flex-1 text-emerald-900 border-emerald-600/30" variant="secondary">
-               <Download size={18} /> Export Students CSV
-             </GlassButton>
-             <GlassButton onClick={() => setIsBroadsheetModalOpen(true)} className="flex-1 text-emerald-900 border-emerald-600/30" variant="secondary">
-               <Download size={18} /> Export Scores
-             </GlassButton>
+
+          <input type="file" ref={importFileInputRef} onChange={handleImportFile} accept=".csv,.xlsx,.xls,.json,.txt,.docx" className="hidden" />
+
+          {importProgress && (
+            <div className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Loader2 size={18} className="animate-spin text-emerald-700 shrink-0" />
+                <span className="text-sm font-semibold text-emerald-900">Importing... {importProgress.processed} / {importProgress.total}</span>
+              </div>
+              <div className="w-full bg-emerald-200/40 rounded-full h-2 overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-300" style={{ width: `${importProgress.total > 0 ? (importProgress.processed / importProgress.total) * 100 : 0}%` }} />
+              </div>
+            </div>
+          )}
+
+          {importResult && (
+            <div className={`p-3 rounded-2xl mb-4 text-sm font-medium ${importResult.result.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                {importResult.result.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                <span>{importResult.result.message}</span>
+              </div>
+              {importResult.result.errors.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-xs cursor-pointer opacity-70">View {importResult.result.errors.length} error(s)</summary>
+                  <div className="mt-1 max-h-32 overflow-y-auto text-xs opacity-70 space-y-0.5">
+                    {importResult.result.errors.slice(0, 50).map((err: string, i: number) => <div key={i}>{err}</div>)}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+            <GlassButton onClick={() => { setImportModalType('students'); importFileInputRef.current?.click(); }} className="text-xs sm:text-sm" variant="secondary">
+              <Users size={16} /> Students
+            </GlassButton>
+            <GlassButton onClick={() => { setImportModalType('teachers'); importFileInputRef.current?.click(); }} className="text-xs sm:text-sm" variant="secondary">
+              <UserCheck size={16} /> Teachers
+            </GlassButton>
+            <GlassButton onClick={() => { setImportModalType('classes'); importFileInputRef.current?.click(); }} className="text-xs sm:text-sm" variant="secondary">
+              <GraduationCap size={16} /> Classes
+            </GlassButton>
+            <GlassButton onClick={() => { setImportModalType('subjects'); importFileInputRef.current?.click(); }} className="text-xs sm:text-sm" variant="secondary">
+              <BookOpen size={16} /> Subjects
+            </GlassButton>
+            <GlassButton onClick={() => { setImportModalType('scores'); importFileInputRef.current?.click(); }} className="text-xs sm:text-sm" variant="secondary">
+              <ClipboardList size={16} /> Scores
+            </GlassButton>
+          </div>
+
+          <div className="border-t border-slate-200 pt-4 mb-4">
+            <p className="text-[11px] font-medium text-slate-500 mb-2">Download Templates</p>
+            <div className="flex flex-wrap gap-2">
+              {(['students', 'teachers', 'classes', 'subjects', 'scores'] as ImportEntityType[]).map(type => (
+                <button key={type} onClick={() => handleDownloadTemplate(type)} className="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors flex items-center gap-1.5">
+                  <Download size={12} /> {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="border-t border-slate-200 pt-4">
-             <input 
-              type="file" 
-              ref={csvInputRef} 
-              onChange={handleCsvChange} 
-              accept=".csv,.doc,.docx,.xls,.xlsx" 
-              className="hidden" 
-            />
-             <GlassButton 
-              onClick={() => csvInputRef.current?.click()} 
-              className="w-full text-emerald-900 bg-emerald-500/20 border-emerald-500/40 hover:bg-emerald-500/30 relative overflow-hidden"
-              disabled={importProgress !== null}
-             >
-                {importProgress ? (
-                  <>
-                    <div className="absolute left-0 top-0 bottom-0 bg-emerald-400/30 transition-all duration-300 pointer-events-none" style={{ width: `${importProgress.total > 0 ? (importProgress.processed / importProgress.total) * 100 : 0}%` }} />
-                    <Loader2 size={18} className="animate-spin relative z-10" /> 
-                    <span className="relative z-10">Importing {importProgress.processed} / {importProgress.total}...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={18} /> Import Students
-                  </>
-                )}
-             </GlassButton>
+            <p className="text-[11px] font-medium text-slate-500 mb-2">Export Data</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <GlassButton onClick={() => handleExportCSV('students')} className="flex-1 text-emerald-900 border-emerald-600/30" variant="secondary">
+                <Download size={18} /> Export Students
+              </GlassButton>
+              <GlassButton onClick={() => setIsBroadsheetModalOpen(true)} className="flex-1 text-emerald-900 border-emerald-600/30" variant="secondary">
+                <Download size={18} /> Export Scores (PDF)
+              </GlassButton>
+            </div>
           </div>
         </GlassCard>
 

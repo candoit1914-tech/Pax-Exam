@@ -1,5 +1,5 @@
 export const errorHandler = (err, req, res, _next) => {
-  console.error(`[ERROR] ${err.message}`, err.stack);
+  console.error(`[ERROR] ${err.message}`, process.env.NODE_ENV === 'development' ? err.stack : '');
 
   if (err.name === 'ValidationError' || err.name === 'ZodError') {
     return res.status(400).json({ error: 'Validation failed', details: err.errors || err.message });
@@ -15,8 +15,7 @@ export const errorHandler = (err, req, res, _next) => {
 
   const status = err.status || 500;
   res.status(status).json({
-    error: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred.' : (err.message || 'Internal server error')
   });
 };
 

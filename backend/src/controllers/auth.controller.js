@@ -4,6 +4,36 @@ import { UserModel } from '../models/user.model.js';
 import { SchoolModel } from '../models/school.model.js';
 import pool from '../config/database.js';
 
+const loginAttempts = new Map();
+
+function cleanupLoginAttempts() {
+  const now = Date.now();
+  for (const [key, data] of loginAttempts) {
+    if (now - data.lastAttempt > 15 * 60 * 1000) loginAttempts.delete(key);
+  }
+}
+setInterval(cleanupLoginAttempts, 60 * 1000);
+
+function checkLoginRateLimit(email) {
+  const data = loginAttempts.get(email) || { count: 0, lastAttempt: 0 };
+  const now = Date.now();
+  if (now - data.lastAttempt > 15 * 60 * 1000) {
+    data.count = 0;
+  }
+  data.count++;
+  data.lastAttempt = now;
+  loginAttempts.set(email, data);
+  return data.count <= 5;
+}
+
+function recordLoginFailure(email) {
+  // Already tracked in checkLoginRateLimit
+}
+
+function clearLoginAttempts(email) {
+  loginAttempts.delete(email);
+}
+
 function generateTokens(user) {
   const accessToken = jwt.sign(
     { userId: user.id, schoolId: user.school_id, role: user.role },
@@ -26,7 +56,13 @@ export const AuthController = {
         return res.status(400).json({ error: 'Email and password are required.' });
       }
 
-      const user = await UserModel.findByEmail(email);
+      const sanitizedEmail = email.toLowerCase().trim();
+
+      if (!checkLoginRateLimit(sanitizedEmail)) {
+        return res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
+      }
+
+      const user = await UserModel.findByEmail(sanitizedEmail);
       if (!user) {
         return res.status(401).json({ error: 'Invalid email or password.' });
       }
@@ -41,6 +77,7 @@ export const AuthController = {
       }
 
       await UserModel.updateLastLogin(user.id);
+      clearLoginAttempts(sanitizedEmail);
 
       const school = await SchoolModel.findById(user.school_id);
       const tokens = generateTokens(user);
@@ -73,7 +110,13 @@ export const AuthController = {
         return res.status(400).json({ error: 'Email, password, and name are required.' });
       }
 
-      const existing = await UserModel.findByEmail(email);
+      const sanitizedEmail = email.toLowerCase().trim();
+
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long.' });
+      }
+
+      const existing = await UserModel.findByEmail(sanitizedEmail);
       if (existing) {
         return res.status(409).json({ error: 'Email already registered.' });
       }
@@ -92,7 +135,7 @@ export const AuthController = {
       const passwordHash = await bcrypt.hash(password, 12);
       const user = await UserModel.create({
         school_id: schoolId,
-        email,
+        email: sanitizedEmail,
         password_hash: passwordHash,
         role: role || 'teacher',
         name
@@ -171,7 +214,9 @@ export const AuthController = {
         return res.status(400).json({ error: 'Name and email are required.' });
       }
 
-      const existing = await UserModel.findByEmail(email);
+      const sanitizedEmail = email.toLowerCase().trim();
+
+      const existing = await UserModel.findByEmail(sanitizedEmail);
       if (existing) {
         return res.status(409).json({ error: 'Email already registered.' });
       }
@@ -181,7 +226,7 @@ export const AuthController = {
 
       const user = await UserModel.create({
         school_id: req.user.school_id,
-        email,
+        email: sanitizedEmail,
         password_hash: passwordHash,
         role: 'teacher',
         name
@@ -189,7 +234,7 @@ export const AuthController = {
 
       res.status(201).json({
         message: 'Teacher created successfully.',
-        credentials: { email, password },
+        credentials: { email: sanitizedEmail, password },
         user: { id: user.id, name: user.name, email: user.email, role: user.role }
       });
     } catch (err) {

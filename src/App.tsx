@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
-import { LoginScreen } from './screens/Login';
-import { DashboardScreen } from './screens/Dashboard';
-import { StudentsScreen } from './screens/Students';
-import { ClassesSubjectsScreen } from './screens/ClassesSubjects';
-import { ScoreEntryScreen } from './screens/Scores';
-import { ReportsScreen } from './screens/Reports';
-import { SettingsScreen } from './screens/Settings';
-import { TeacherManagementScreen } from './screens/TeacherManagement';
-import { StudentPortalScreen } from './screens/StudentPortal';
+
+const LoginScreen = lazy(() => import('./screens/Login').then(m => ({ default: m.LoginScreen })));
+const DashboardScreen = lazy(() => import('./screens/Dashboard').then(m => ({ default: m.DashboardScreen })));
+const StudentsScreen = lazy(() => import('./screens/Students').then(m => ({ default: m.StudentsScreen })));
+const ClassesSubjectsScreen = lazy(() => import('./screens/ClassesSubjects').then(m => ({ default: m.ClassesSubjectsScreen })));
+const ScoreEntryScreen = lazy(() => import('./screens/Scores').then(m => ({ default: m.ScoreEntryScreen })));
+const ReportsScreen = lazy(() => import('./screens/Reports').then(m => ({ default: m.ReportsScreen })));
+const SettingsScreen = lazy(() => import('./screens/Settings').then(m => ({ default: m.SettingsScreen })));
+const TeacherManagementScreen = lazy(() => import('./screens/TeacherManagement').then(m => ({ default: m.TeacherManagementScreen })));
+const StudentPortalScreen = lazy(() => import('./screens/StudentPortal').then(m => ({ default: m.StudentPortalScreen })));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,6 +52,15 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 border-3 border-blue-500/30 border-t-blue-600 rounded-full animate-spin"></div>
+      <p className="text-slate-500 text-sm font-medium">Loading...</p>
+    </div>
+  </div>
+);
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -58,15 +68,15 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Redirect to="/login" />} />
-            <Route path="login" element={<LoginScreen />} />
-            <Route path="student-portal" element={<StudentPortalScreen />} />
-            <Route path="dashboard" element={<AdminRoute><DashboardScreen /></AdminRoute>} />
-            <Route path="students" element={<AdminRoute><StudentsScreen /></AdminRoute>} />
-            <Route path="classes" element={<AdminRoute><ClassesSubjectsScreen /></AdminRoute>} />
-            <Route path="scores" element={<ProtectedRoute><ScoreEntryScreen /></ProtectedRoute>} />
-            <Route path="reports" element={<AdminRoute><ReportsScreen /></AdminRoute>} />
-            <Route path="teachers" element={<AdminRoute><TeacherManagementScreen /></AdminRoute>} />
-            <Route path="settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
+            <Route path="login" element={<Suspense fallback={<LoadingFallback />}><LoginScreen /></Suspense>} />
+            <Route path="student-portal" element={<Suspense fallback={<LoadingFallback />}><StudentPortalScreen /></Suspense>} />
+            <Route path="dashboard" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><DashboardScreen /></Suspense></AdminRoute>} />
+            <Route path="students" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><StudentsScreen /></Suspense></AdminRoute>} />
+            <Route path="classes" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><ClassesSubjectsScreen /></Suspense></AdminRoute>} />
+            <Route path="scores" element={<ProtectedRoute><Suspense fallback={<LoadingFallback />}><ScoreEntryScreen /></Suspense></ProtectedRoute>} />
+            <Route path="reports" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><ReportsScreen /></Suspense></AdminRoute>} />
+            <Route path="teachers" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><TeacherManagementScreen /></Suspense></AdminRoute>} />
+            <Route path="settings" element={<ProtectedRoute><Suspense fallback={<LoadingFallback />}><SettingsScreen /></Suspense></ProtectedRoute>} />
           </Route>
         </Routes>
       </AuthProvider>
