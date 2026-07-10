@@ -15,7 +15,6 @@ const navItems = (isAdmin: boolean) => isAdmin
     ]
   : [
       { path: '/scores', icon: Edit3, label: 'Scores' },
-      { path: '/reports', icon: FileText, label: 'Reports' },
     ];
 
 export const Layout: React.FC = () => {
@@ -166,7 +165,7 @@ export const Layout: React.FC = () => {
              <h1 className="text-2xl font-black tracking-tight text-slate-900">{pageTitle}</h1>
              <p className="text-blue-600 font-bold uppercase tracking-widest text-[9px] drop-shadow-sm">{currentItem?.subtitle || 'System & Profile Configuration'}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {isAdmin && (
               <NavLink to="/teachers" className={({ isActive }) => cn(
                 "p-2 rounded-full flex items-center justify-center backdrop-blur-md border shadow-sm transition-all",
@@ -175,6 +174,13 @@ export const Layout: React.FC = () => {
                 <UserCog size={20} />
               </NavLink>
             )}
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full flex items-center justify-center backdrop-blur-md border border-white/50 bg-white/40 shadow-sm text-red-500 hover:bg-red-50 transition-all"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
             <NavLink
               to="/settings"
               className={({ isActive }) => cn(

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard, GlassInput, GlassSelect, GlassButton } from '../components/ui/Glass';
 import { calculateTotal, getGrade, getGradePoint } from '../utils/grading';
@@ -9,8 +9,14 @@ import { studentService } from '../services/studentService';
 import { subjectService } from '../services/subjectService';
 import { classService } from '../services/classService';
 import { scoreService } from '../services/scoreService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const ScoreEntryScreen = () => {
+  const { user } = useAuth();
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
+  const role = currentUser?.role || '';
+  const isAdmin = role === 'super_admin' || role === 'school_admin';
+
   const [term, setTerm] = useState(() => localStorage.getItem('scoreEntryTerm') || 'Term 1');
   const [academicYear, setAcademicYear] = useState(() => localStorage.getItem('scoreEntryYear') || '2023/2024');
   const [mode, setMode] = useState<'single' | 'batch'>('single');
@@ -26,10 +32,25 @@ export const ScoreEntryScreen = () => {
 
   const [students, setStudents] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
   const [recentScores, setRecentScores] = useState<any[]>([]);
   const [relevantScores, setRelevantScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const classes = useMemo(() => {
+    if (isAdmin) return allClasses;
+    const teacherName = currentUser?.name || '';
+    return allClasses.filter((c: any) => {
+      const tName = (c.teacher_name || '').toLowerCase().trim();
+      return tName === teacherName.toLowerCase().trim();
+    });
+  }, [allClasses, isAdmin, currentUser]);
+
+  const filteredStudents = useMemo(() => {
+    if (isAdmin) return students;
+    const classIds = classes.map((c: any) => c.id);
+    return students.filter((s: any) => classIds.includes(s.class_id));
+  }, [students, classes, isAdmin]);
 
   useEffect(() => {
     Promise.all([
@@ -39,7 +60,7 @@ export const ScoreEntryScreen = () => {
     ]).then(([s, sub, c]) => {
       setStudents(s);
       setSubjects(sub);
-      setClasses(c);
+      setAllClasses(c);
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
@@ -107,6 +128,14 @@ export const ScoreEntryScreen = () => {
     return (total / termScores.length).toFixed(2);
   };
 
+  const visibleScores = useMemo(() => {
+    if (isAdmin) return recentScores;
+    const classStudentIds = new Set(filteredStudents.map((s: any) => s.id));
+    return recentScores.filter((s: any) => classStudentIds.has(s.student_id));
+  }, [recentScores, filteredStudents, isAdmin]);
+
+  const displayStudents = isAdmin ? students : filteredStudents;
+
   if (loading) return <div className="p-6 pt-4"><p className="text-slate-500">Loading...</p></div>;
 
   return (
@@ -125,7 +154,7 @@ export const ScoreEntryScreen = () => {
           <motion.div key="single" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <GlassCard droplet className="p-3 sm:p-4">
               <form onSubmit={handleSaveSingle} className="flex flex-col gap-4">
-                <SearchableStudentSelect label="Select Student" students={students} value={studentId} onChange={setStudentId} sizing="sm" required />
+                <SearchableStudentSelect label="Select Student" students={filteredStudents} value={studentId} onChange={setStudentId} sizing="sm" required />
                 <GlassSelect label="Select Subject" value={subjectId} sizing="sm" onChange={e => setSubjectId(e.target.value)} options={[{ value: '', label: 'Choose a subject' }, ...subjects.map((s: any) => ({ value: String(s.id), label: s.name }))]} required />
                 <div className="grid grid-cols-2 gap-4 max-w-xs">
                   <div className="relative">
@@ -145,12 +174,12 @@ export const ScoreEntryScreen = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><TrendingUp className="text-blue-600" size={20} />{historyStudentId ? 'Score History' : 'Recent Entries'}</h2>
                 <div className="w-full sm:w-64 relative z-30">
-                  <SearchableStudentSelect label="Filter by Student" students={students} value={historyStudentId} onChange={setHistoryStudentId} sizing="sm" />
+                  <SearchableStudentSelect label="Filter by Student" students={filteredStudents} value={historyStudentId} onChange={setHistoryStudentId} sizing="sm" />
                 </div>
               </div>
               <div className="flex flex-col gap-3">
                 <AnimatePresence>
-                  {recentScores.map((score: any) => {
+                  {visibleScores.map((score: any) => {
                     const termAvg = getStudentTermAverage(score.student_id, score.term, score.academic_year);
                     const termScores = relevantScores.filter((s: any) => s.student_id === score.student_id && s.term === score.term && s.academic_year === score.academic_year);
                     const hasScores = termScores.length > 0;

@@ -64,7 +64,7 @@ export default function App() {
             <Route path="students" element={<AdminRoute><StudentsScreen /></AdminRoute>} />
             <Route path="classes" element={<AdminRoute><ClassesSubjectsScreen /></AdminRoute>} />
             <Route path="scores" element={<ProtectedRoute><ScoreEntryScreen /></ProtectedRoute>} />
-            <Route path="reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
+            <Route path="reports" element={<AdminRoute><ReportsScreen /></AdminRoute>} />
             <Route path="teachers" element={<AdminRoute><TeacherManagementScreen /></AdminRoute>} />
             <Route path="settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
           </Route>
