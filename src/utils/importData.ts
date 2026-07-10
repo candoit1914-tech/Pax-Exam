@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 import { studentService } from '../services/studentService';
 import { classService } from '../services/classService';
 import { subjectService } from '../services/subjectService';
@@ -17,11 +18,12 @@ export interface ImportResult {
 }
 
 // Auto-detect file format from extension
-function detectFormat(file: File): 'csv' | 'xlsx' | 'json' | 'txt' {
+function detectFormat(file: File): 'csv' | 'xlsx' | 'json' | 'txt' | 'docx' {
   const ext = file.name.split('.').pop()?.toLowerCase();
   if (ext === 'json') return 'json';
   if (ext === 'xlsx' || ext === 'xls') return 'xlsx';
   if (ext === 'txt') return 'txt';
+  if (ext === 'docx' || ext === 'doc') return 'docx';
   return 'csv';
 }
 
@@ -56,6 +58,41 @@ async function parseFile(file: File): Promise<Record<string, any>[]> {
       headers.forEach((h, i) => { row[h] = values[i] || ''; });
       return row;
     });
+  }
+
+  if (format === 'docx') {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const docXml = await zip.file('word/document.xml')?.async('text');
+    if (!docXml) throw new Error('Could not find document content in the DOCX file');
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(docXml, 'application/xml');
+    const rows = doc.querySelectorAll('w\\:tr');
+    
+    if (rows.length < 2) throw new Error('DOCX file must contain a table with at least a header row and one data row');
+    
+    const getCellText = (row: Element): string[] => {
+      const cells = row.querySelectorAll('w\\:tc');
+      return Array.from(cells).map(cell => {
+        const textNodes = cell.querySelectorAll('w\\:t');
+        return Array.from(textNodes).map(t => t.textContent || '').join(' ').trim();
+      });
+    };
+    
+    const headerRow = getCellText(rows[0]);
+    const headers = headerRow.map(h => h.replace(/^["']|["']$/g, ''));
+    
+    const result: Record<string, any>[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const values = getCellText(rows[i]);
+      const row: Record<string, any> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+      if (Object.values(row).some(v => v !== '')) {
+        result.push(row);
+      }
+    }
+    return result;
   }
   
   // CSV or XLSX - use XLSX library for both

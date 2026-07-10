@@ -36,6 +36,10 @@ export const SettingsScreen = () => {
 
   const navigate = useNavigate();
   const { user, refreshUser, logout } = useAuth();
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
+  const role = currentUser?.role || 'teacher';
+  const isAdmin = role === 'super_admin' || role === 'school_admin';
+
   const [myName, setMyName] = useState(user?.name || '');
   const [myEmail, setMyEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -393,6 +397,7 @@ export const SettingsScreen = () => {
         </GlassCard>
 
         {/* School Profile */}
+        {isAdmin && (
         <GlassCard droplet className="p-4 sm:p-5 border-indigo-200">
           <div className="flex items-start gap-4 mb-6">
             <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl flex items-center justify-center shrink-0">
@@ -498,8 +503,10 @@ export const SettingsScreen = () => {
             </GlassButton>
           </form>
         </GlassCard>
+        )}
 
         {/* Data Import & Export */}
+        {isAdmin && (
         <GlassCard droplet className="p-4 sm:p-5 border-emerald-200">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center shrink-0">
@@ -507,11 +514,11 @@ export const SettingsScreen = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 mb-1">Data Import & Export</h2>
-              <p className="text-[11px] font-medium text-slate-600">Import students, teachers, classes, subjects, and scores from CSV, Excel, JSON, TXT files.</p>
+              <p className="text-[11px] font-medium text-slate-600">Import students, teachers, classes, subjects, and scores from CSV, Excel, JSON, TXT, or DOCX files.</p>
             </div>
           </div>
 
-          <input type="file" ref={importFileInputRef} onChange={handleImportFile} accept=".csv,.xlsx,.xls,.json,.txt,.docx" className="hidden" />
+          <input type="file" ref={importFileInputRef} onChange={handleImportFile} accept=".csv,.xlsx,.xls,.json,.txt,.docx,.doc" className="hidden" />
 
           {importProgress && (
             <div className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 mb-4">
@@ -583,8 +590,10 @@ export const SettingsScreen = () => {
             </div>
           </div>
         </GlassCard>
+        )}
 
         {/* Export Backup Data */}
+        {isAdmin && (
         <GlassCard droplet className="p-4 sm:p-5 border-blue-200">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-center justify-center shrink-0">
@@ -604,8 +613,10 @@ export const SettingsScreen = () => {
             <Database size={18} /> {isBackingUp ? 'Preparing Backup...' : 'Download Backup (.zip)'}
           </GlassButton>
         </GlassCard>
+        )}
 
         {/* Restore Data */}
+        {isAdmin && (
         <GlassCard droplet className="p-4 sm:p-5 border-amber-200">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center shrink-0">
@@ -646,8 +657,10 @@ export const SettingsScreen = () => {
             </GlassButton>
           )}
         </GlassCard>
+        )}
 
         {/* Database Optimization */}
+        {isAdmin && (
         <GlassCard droplet className="p-4 sm:p-5 border-blue-200">
           <div className="flex items-start gap-4 mb-4">
             <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-center justify-center shrink-0">
@@ -671,6 +684,7 @@ export const SettingsScreen = () => {
             )}
           </GlassButton>
         </GlassCard>
+        )}
 
         {/* Logout */}
         <div className="flex justify-center mt-4">
@@ -686,6 +700,7 @@ export const SettingsScreen = () => {
         </div>
 
         {/* Reset App */}
+        {isAdmin && (
         <div className="flex justify-center mt-4 pb-8">
           <button 
             onClick={handleReset}
@@ -694,6 +709,7 @@ export const SettingsScreen = () => {
             Reset
           </button>
         </div>
+        )}
       </div>
 
       {/* Hidden Broadsheet Renderer for PDF generation */}
