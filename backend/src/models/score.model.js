@@ -34,7 +34,7 @@ export const ScoreModel = {
   },
 
   async upsert(data) {
-    const { school_id, student_id, subject_id, class_score, exam_score, total, grade, term, academic_year } = data;
+    const { school_id, student_id, subject_id, class_score, exam_score, grade, term, academic_year } = data;
     const existing = await pool.query(
       `SELECT id FROM scores
        WHERE school_id = $1 AND student_id = $2 AND subject_id = $3
@@ -43,16 +43,16 @@ export const ScoreModel = {
     );
     if (existing.rows[0]) {
       const result = await pool.query(
-        `UPDATE scores SET class_score = $1, exam_score = $2, total = $3, grade = $4
-         WHERE id = $5 RETURNING *`,
-        [class_score, exam_score, total, grade, existing.rows[0].id]
+        `UPDATE scores SET class_score = $1, exam_score = $2, grade = $3
+         WHERE id = $4 RETURNING *`,
+        [class_score, exam_score, grade, existing.rows[0].id]
       );
       return result.rows[0];
     }
     const result = await pool.query(
-      `INSERT INTO scores (school_id, student_id, subject_id, class_score, exam_score, total, grade, term, academic_year)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [school_id, student_id, subject_id, class_score, exam_score, total, grade, term, academic_year]
+      `INSERT INTO scores (school_id, student_id, subject_id, class_score, exam_score, grade, term, academic_year)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [school_id, student_id, subject_id, class_score, exam_score, grade, term, academic_year]
     );
     return result.rows[0];
   },
@@ -70,15 +70,15 @@ export const ScoreModel = {
         );
         if (existing.rows[0]) {
           const r = await client.query(
-            `UPDATE scores SET class_score = $1, exam_score = $2, total = $3, grade = $4 WHERE id = $5 RETURNING *`,
-            [score.class_score, score.exam_score, score.total, score.grade, existing.rows[0].id]
+            `UPDATE scores SET class_score = $1, exam_score = $2, grade = $3 WHERE id = $4 RETURNING *`,
+            [score.class_score, score.exam_score, score.grade, existing.rows[0].id]
           );
           results.push(r.rows[0]);
         } else {
           const r = await client.query(
-            `INSERT INTO scores (school_id, student_id, subject_id, class_score, exam_score, total, grade, term, academic_year)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [schoolId, score.student_id, score.subject_id, score.class_score, score.exam_score, score.total, score.grade, score.term, score.academic_year]
+            `INSERT INTO scores (school_id, student_id, subject_id, class_score, exam_score, grade, term, academic_year)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [schoolId, score.student_id, score.subject_id, score.class_score, score.exam_score, score.grade, score.term, score.academic_year]
           );
           results.push(r.rows[0]);
         }
@@ -118,5 +118,10 @@ export const ScoreModel = {
       [classId, term, academicYear, schoolId]
     );
     return result.rows;
+  },
+
+  async count(schoolId) {
+    const result = await pool.query('SELECT COUNT(*) FROM scores WHERE school_id = $1', [schoolId]);
+    return parseInt(result.rows[0].count);
   }
 };

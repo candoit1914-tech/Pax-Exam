@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GlassCard, GlassButton, GlassInput, GlassSelect } from '../components/ui/Glass';
 import { exportBackup, restoreDatabase } from '../utils/backup';
 import { exportStudentsToCSV, exportScoresToCSV } from '../utils/csv';
-import { importData, ImportEntityType, getTemplateData, getTemplateFilename } from '../utils/importData';
+import { importData, ImportEntityType, ImportResult, getTemplateData, getTemplateFilename } from '../utils/importData';
 import { motion, AnimatePresence } from 'motion/react';
 import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2, User, Lock, Eye, EyeOff, Users, UserCheck, GraduationCap, BookOpen, ClipboardList } from 'lucide-react';
 import { authService } from '../services/authService';

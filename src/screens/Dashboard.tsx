@@ -13,10 +13,13 @@ export const DashboardScreen = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [topPerformer, setTopPerformer] = useState<any>(null);
+  const [lowestPerformer, setLowestPerformer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      const startTime = Date.now();
       try {
         const [studentsData, classesData, subjectsData] = await Promise.all([
           studentService.getAll({ status: 'active' }),
@@ -26,6 +29,34 @@ export const DashboardScreen = () => {
         setStudents(studentsData);
         setClasses(classesData);
         setSubjects(subjectsData);
+
+        const studentIds = new Set(studentsData.map((s: any) => s.id));
+        if (studentsData.length > 0) {
+          try {
+            const scores = await scoreService.getAll();
+            const filteredScores = Array.isArray(scores)
+              ? scores.filter((s: any) => studentIds.has(s.student_id))
+              : [];
+
+            if (filteredScores.length > 0) {
+              const studentAverages = studentsData.map((s: any) => {
+                const studentScores = filteredScores.filter((sc: any) => sc.student_id === s.id);
+                const total = studentScores.reduce((sum: number, sc: any) => sum + (Number(sc.total) || 0), 0);
+                const avg = studentScores.length ? total / studentScores.length : 0;
+                const examTotal = studentScores.reduce((sum: number, sc: any) => sum + (Number(sc.exam_score) || 0), 0) * 2;
+                return { id: s.id, name: s.name, average: avg, rankScore: examTotal };
+              });
+              const ranked = rankStudents(studentAverages);
+              setTopPerformer(ranked.length > 0 && ranked[0].average > 0 ? ranked[0] : null);
+              const lowest = ranked.filter((s: any) => s.average > 0);
+              setLowestPerformer(lowest.length > 0 ? lowest[lowest.length - 1] : null);
+            }
+          } catch (scoreErr) {
+            console.error('Failed to load scores for dashboard:', scoreErr);
+          }
+        }
+
+        console.log(`Dashboard loaded in ${Date.now() - startTime}ms`);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       } finally {
@@ -34,35 +65,6 @@ export const DashboardScreen = () => {
     };
     fetchData();
   }, []);
-
-  const [topPerformer, setTopPerformer] = useState<any>(null);
-  const [lowestPerformer, setLowestPerformer] = useState<any>(null);
-
-  useEffect(() => {
-    const computePerformers = async () => {
-      if (students.length === 0) return;
-      try {
-        const scores = await scoreService.getAll();
-        if (!scores || scores.length === 0) return;
-        const studentIds = students.map(s => s.id);
-        const filteredScores = scores.filter((s: any) => studentIds.includes(s.student_id));
-        const studentAverages = students.map((s: any) => {
-          const studentScores = filteredScores.filter((sc: any) => sc.student_id === s.id);
-          const total = studentScores.reduce((sum: number, sc: any) => sum + (sc.total || 0), 0);
-          const avg = studentScores.length ? total / studentScores.length : 0;
-          const examTotal = studentScores.reduce((sum: number, sc: any) => sum + (Number(sc.exam_score) || 0), 0) * 2;
-          return { id: s.id, name: s.name, average: avg, rankScore: examTotal };
-        });
-        const ranked = rankStudents(studentAverages);
-        setTopPerformer(ranked.length > 0 ? ranked[0] : null);
-        const lowest = [...ranked].filter(s => s.average > 0);
-        setLowestPerformer(lowest.length > 0 ? lowest[lowest.length - 1] : null);
-      } catch (err) {
-        console.error('Failed to compute performers:', err);
-      }
-    };
-    computePerformers();
-  }, [students]);
 
   const stats = [
     { label: 'Total Students', value: students.length, icon: Users, color: 'text-blue-800', bg: 'bg-blue-500/20' },
