@@ -28,6 +28,7 @@ export const SettingsScreen = () => {
   
   const [profile, setProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
   const [importProgress, setImportProgress] = useState<{processed: number, total: number} | null>(null);
+  const [restoreProgress, setRestoreProgress] = useState<{phase: string, current: number, total: number} | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
   const navigate = useNavigate();
@@ -263,24 +264,34 @@ export const SettingsScreen = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (window.confirm("WARNING: Restoring a backup will erase ALL current data on the server and replace it with the backup. This cannot be undone. Proceed?")) {
-      restoreDatabase(file).then(() => {
-        showStatus('success', 'Database restored successfully!');
+    if (!window.confirm("WARNING: Restoring a backup will erase ALL current data on the server and replace it with the backup. This cannot be undone. Proceed?")) {
+      if(fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setRestoreProgress({ phase: 'Starting…', current: 0, total: 1 });
+    try {
+      const result = await restoreDatabase(file, (phase, current, total, error) => {
+        setRestoreProgress({ phase, current, total });
+      });
+      setRestoreProgress(null);
+      if (result.success) {
+        showStatus('success', result.message);
         const p = localStorage.getItem('schoolProfile');
         if (p) {
           try { setProfile(JSON.parse(p)); } catch(e){}
         }
-      }).catch(err => {
-        console.error(err);
-        showStatus('error', 'Failed to restore database. Make sure it is a valid .json or .zip backup.');
-      }).finally(() => {
-        if(fileInputRef.current) fileInputRef.current.value = '';
-      });
-    } else {
+      } else {
+        showStatus('error', result.message);
+      }
+    } catch (err: any) {
+      setRestoreProgress(null);
+      showStatus('error', `Restore failed: ${err?.message || 'Unknown error'}`);
+    } finally {
       if(fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -547,12 +558,27 @@ export const SettingsScreen = () => {
             accept="application/json,application/zip,.json,.zip" 
             className="hidden" 
           />
-          <GlassButton 
-            onClick={() => fileInputRef.current?.click()} 
-            className="w-full text-amber-900 bg-amber-500/20 border-amber-500/40 hover:bg-amber-500/30"
-          >
-           Upload Backup
-          </GlassButton>
+          {restoreProgress ? (
+            <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Loader2 size={18} className="animate-spin text-amber-700 shrink-0" />
+                <span className="text-sm font-semibold text-amber-900">{restoreProgress.phase}</span>
+              </div>
+              <div className="w-full bg-amber-200/40 rounded-full h-2 overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                  style={{ width: `${(restoreProgress.current / restoreProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <GlassButton
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full text-amber-900 bg-amber-500/20 border-amber-500/40 hover:bg-amber-500/30"
+            >
+              <Upload size={18} /> Upload Backup
+            </GlassButton>
+          )}
         </GlassCard>
 
         {/* Database Optimization */}

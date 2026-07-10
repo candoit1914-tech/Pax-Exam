@@ -72,23 +72,29 @@ export const DashboardScreen = () => {
 
   if (loading) return <div className="p-6 pt-4"><p className="text-slate-500">Loading dashboard...</p></div>;
 
+  const renderStatCard = (stat: typeof stats[0], delay: number) => (
+    <motion.div key={stat.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay }}>
+      <GlassCard className="p-2 md:p-3 flex items-center justify-between relative overflow-hidden group gap-2">
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
+            {React.createElement(stat.icon, { className: stat.color, size: 16 })}
+          </div>
+          <p className="text-slate-700 text-[10px] md:text-xs font-bold uppercase tracking-widest">{stat.label}</p>
+        </div>
+        <p className="text-xl md:text-2xl font-black text-slate-900 leading-tight pr-2">{stat.value}</p>
+        <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
+      </GlassCard>
+    </motion.div>
+  );
+
   return (
     <div className="p-6 pt-4 flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
-        {stats.map((stat, i) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}>
-            <GlassCard className="p-2 md:p-3 flex items-center justify-between relative overflow-hidden group gap-2">
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>
-                  {React.createElement(stat.icon, { className: stat.color, size: 16 })}
-                </div>
-                <p className="text-slate-700 text-[10px] md:text-xs font-bold uppercase tracking-widest">{stat.label}</p>
-              </div>
-              <p className="text-xl md:text-2xl font-black text-slate-900 leading-tight pr-2">{stat.value}</p>
-              <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-white/40 to-transparent rounded-r-lg group-hover:from-white/60 transition-colors" />
-            </GlassCard>
-          </motion.div>
-        ))}
+        {renderStatCard(stats[0], 0)}
+        <div className="grid grid-cols-2 gap-2 md:gap-0 md:contents">
+          {renderStatCard(stats[1], 0.1)}
+          {renderStatCard(stats[2], 0.2)}
+        </div>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col md:flex-row gap-3 mt-2">
