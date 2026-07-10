@@ -7,7 +7,7 @@ import { scoreService } from '../services/scoreService';
 import { teacherService } from '../services/teacherService';
 import { resizeImage } from '../utils/images';
 
-const MAX_IMAGE_BYTES = 500_000; // 500KB — resize if larger
+const MAX_IMAGE_BYTES = 500_000;
 
 const compressIfLarge = async (value: string | undefined): Promise<string | undefined> => {
   if (!value || !value.startsWith('data:image')) return value;
@@ -40,23 +40,26 @@ export const exportBackup = async () => {
     const json = JSON.stringify(backupData);
 
     if (Capacitor.isNativePlatform()) {
-      await Filesystem.writeFile({
+      const result = await Filesystem.writeFile({
         path: filename,
         data: json,
-        directory: Directory.Documents,
-        encoding: Encoding.UTF8
+        directory: Directory.Downloads,
+        encoding: Encoding.UTF8,
       });
-      return true;
-    } else {
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.body.appendChild(document.createElement('a'));
-      a.href = url;
-      a.download = filename;
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+      alert(`Backup saved to Downloads/${filename}`);
       return true;
     }
+
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return true;
   } catch (error: any) {
     console.error("Backup failed:", error);
     alert(`Backup error: ${error.message || 'The data is too large'}`);
@@ -73,28 +76,41 @@ const deleteAll = async (items: any[], service: { delete: (id: any) => Promise<a
   await Promise.all(ids.map(id => service.delete(id).catch(e => console.warn('Delete failed:', id, e))));
 };
 
-const createBatch = async (
+interface CreateResult {
+  count: number;
+  idMap: Map<number, number>;
+}
+
+const createBatchWithIdMap = async (
   items: any[],
   service: { create: (item: any) => Promise<any> },
   onProgress?: (done: number, total: number, error?: string) => void,
-) => {
-  if (!items?.length) return 0;
+): Promise<CreateResult> => {
+  if (!items?.length) return { count: 0, idMap: new Map() };
   let successCount = 0;
+  const idMap = new Map<number, number>();
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    const oldId = getId(item);
     try {
       const payload = { ...item };
+      delete payload.id;
+      delete payload.created_at;
+      delete payload.updated_at;
       if (payload.photo) payload.photo = await compressIfLarge(payload.photo);
-      await service.create(payload);
+      const created = await service.create(payload);
       successCount++;
+      if (oldId && created?.id) {
+        idMap.set(oldId, created.id);
+      }
       onProgress?.(i + 1, items.length);
     } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.message || 'Unknown error';
-      console.warn('Skipping item:', item?.[Object.keys(item)[0]], e);
+      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Unknown error';
+      console.warn('Skipping item:', item?.name || item?.[Object.keys(item)[0]], msg);
       onProgress?.(i + 1, items.length, `Skipped: ${msg}`);
     }
   }
-  return successCount;
+  return { count: successCount, idMap };
 };
 
 export const restoreDatabase = async (
@@ -113,7 +129,6 @@ export const restoreDatabase = async (
 
     if (!data || typeof data !== 'object') throw new Error("Invalid backup format");
 
-    // 1. Fetch existing data from server
     onProgress?.('Fetching existing data…', 0, 1);
     const [existingScores, existingStudents, existingSubjects, existingClasses, existingTeachers] = await Promise.all([
       scoreService.getAll(),
@@ -123,7 +138,6 @@ export const restoreDatabase = async (
       teacherService.getAll(),
     ]);
 
-    // 2. Delete existing data (children first to respect foreign keys)
     onProgress?.('Deleting existing data…', 0, 1);
     await deleteAll(existingScores, scoreService);
     await deleteAll(existingStudents, studentService);
@@ -131,7 +145,6 @@ export const restoreDatabase = async (
     await deleteAll(existingClasses, classService);
     await deleteAll(existingTeachers, teacherService);
 
-    // 3. Restore school profile (compress large images)
     if (data.schoolProfile) {
       const profile = { ...data.schoolProfile };
       if (profile.logo) profile.logo = await compressIfLarge(profile.logo);
@@ -140,37 +153,82 @@ export const restoreDatabase = async (
       localStorage.setItem('schoolProfile', JSON.stringify(profile));
     }
 
-    // 4. Create backed-up data (parents first)
-    const totals = [
-      { label: 'Teachers', items: data.teachers, service: teacherService },
-      { label: 'Classes', items: data.classes, service: classService },
-      { label: 'Subjects', items: data.subjects, service: subjectService },
-      { label: 'Students', items: data.students, service: studentService },
-    ];
+    const classIdMap = new Map<number, number>();
+    const subjectIdMap = new Map<number, number>();
+    const studentIdMap = new Map<number, number>();
 
     let succeeded = 0;
     let failed = 0;
 
-    for (const { label, items, service } of totals) {
-      if (!items?.length) continue;
-      const count = await createBatch(items, service, (d, t, e) => {
-        onProgress?.(`${label} ${d}/${t}`, d, t, e);
+    if (data.classes?.length) {
+      const { count, idMap } = await createBatchWithIdMap(data.classes, classService, (d, t, e) => {
+        onProgress?.(`Classes ${d}/${t}`, d, t, e);
       });
       succeeded += count;
-      failed += items.length - count;
+      failed += data.classes.length - count;
+      idMap.forEach((v, k) => classIdMap.set(k, v));
+    }
+
+    if (data.subjects?.length) {
+      const { count, idMap } = await createBatchWithIdMap(data.subjects, subjectService, (d, t, e) => {
+        onProgress?.(`Subjects ${d}/${t}`, d, t, e);
+      });
+      succeeded += count;
+      failed += data.subjects.length - count;
+      idMap.forEach((v, k) => subjectIdMap.set(k, v));
+    }
+
+    if (data.teachers?.length) {
+      const { count } = await createBatchWithIdMap(data.teachers, teacherService, (d, t, e) => {
+        onProgress?.(`Teachers ${d}/${t}`, d, t, e);
+      });
+      succeeded += count;
+      failed += data.teachers.length - count;
+    }
+
+    if (data.students?.length) {
+      const remappedStudents = data.students.map((s: any) => {
+        const payload = { ...s };
+        delete payload.id;
+        delete payload.created_at;
+        delete payload.updated_at;
+        if (payload.class_id && classIdMap.has(payload.class_id)) {
+          payload.class_id = classIdMap.get(payload.class_id);
+        }
+        return payload;
+      });
+      const { count, idMap } = await createBatchWithIdMap(remappedStudents, studentService, (d, t, e) => {
+        onProgress?.(`Students ${d}/${t}`, d, t, e);
+      });
+      succeeded += count;
+      failed += data.students.length - count;
+      idMap.forEach((v, k) => studentIdMap.set(k, v));
     }
 
     let msg = `Restore complete. ${succeeded} item(s) created.`;
     if (failed > 0) msg += ` ${failed} item(s) skipped (check console).`;
     if (!succeeded && !failed) msg = 'Backup file contains no data.';
 
-    // 5. Scores
     if (data.scores?.length) {
+      const remappedScores = data.scores.map((sc: any) => {
+        const payload = { ...sc };
+        delete payload.id;
+        delete payload.created_at;
+        delete payload.updated_at;
+        delete payload.total;
+        if (payload.student_id && studentIdMap.has(payload.student_id)) {
+          payload.student_id = studentIdMap.get(payload.student_id);
+        }
+        if (payload.subject_id && subjectIdMap.has(payload.subject_id)) {
+          payload.subject_id = subjectIdMap.get(payload.subject_id);
+        }
+        return payload;
+      });
       try {
-        await scoreService.bulkUpsert(data.scores);
+        await scoreService.bulkUpsert(remappedScores);
         msg += ` ${data.scores.length} scores upserted.`;
       } catch (e: any) {
-        const errMsg = e?.response?.data?.error || e?.message || 'Unknown error';
+        const errMsg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Unknown error';
         msg += ` Scores failed: ${errMsg}`;
       }
     }

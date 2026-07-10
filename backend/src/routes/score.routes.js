@@ -7,6 +7,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', authorize('super_admin', 'school_admin', 'teacher'), ScoreController.getAll);
+router.get('/dashboard', authorize('super_admin', 'school_admin', 'teacher'), ScoreController.getDashboard);
 router.get('/term-report', authorize('super_admin', 'school_admin', 'teacher'), ScoreController.getTermReport);
 router.get('/:id', authorize('super_admin', 'school_admin', 'teacher'), ScoreController.getById);
 router.post('/', authorize('super_admin', 'school_admin', 'teacher'), ScoreController.upsert);

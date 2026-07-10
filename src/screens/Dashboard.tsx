@@ -30,13 +30,10 @@ export const DashboardScreen = () => {
         setClasses(classesData);
         setSubjects(subjectsData);
 
-        const studentIds = new Set(studentsData.map((s: any) => s.id));
         if (studentsData.length > 0) {
           try {
-            const scores = await scoreService.getAll();
-            const filteredScores = Array.isArray(scores)
-              ? scores.filter((s: any) => studentIds.has(s.student_id))
-              : [];
+            const scores = await scoreService.getDashboard();
+            const filteredScores = Array.isArray(scores) ? scores : [];
 
             if (filteredScores.length > 0) {
               const studentAverages = studentsData.map((s: any) => {

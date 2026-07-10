@@ -29,5 +29,10 @@ export const scoreService = {
   async getTermReport(params) {
     const { data } = await api.get('/scores/term-report', { params });
     return data;
+  },
+
+  async getDashboard(params = {}) {
+    const { data } = await api.get('/scores/dashboard', { params });
+    return data;
   }
 };

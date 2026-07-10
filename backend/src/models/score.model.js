@@ -123,5 +123,23 @@ export const ScoreModel = {
   async count(schoolId) {
     const result = await pool.query('SELECT COUNT(*) FROM scores WHERE school_id = $1', [schoolId]);
     return parseInt(result.rows[0].count);
+  },
+
+  async findLightweight(schoolId, { class_id, academic_year } = {}) {
+    let sql = `SELECT sc.student_id, sc.total, sc.exam_score, sc.subject_id
+               FROM scores sc
+               WHERE sc.school_id = $1`;
+    const params = [schoolId];
+    let idx = 2;
+    if (class_id) {
+      sql += ` AND sc.student_id IN (SELECT id FROM students WHERE class_id = $${idx++} AND school_id = $1)`;
+      params.push(class_id);
+    }
+    if (academic_year) {
+      sql += ` AND sc.academic_year = $${idx++}`;
+      params.push(academic_year);
+    }
+    const result = await pool.query(sql, params);
+    return result.rows;
   }
 };

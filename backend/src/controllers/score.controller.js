@@ -32,6 +32,19 @@ export const ScoreController = {
     }
   },
 
+  async getDashboard(req, res, next) {
+    const start = Date.now();
+    try {
+      const { class_id, academic_year } = req.query;
+      const scores = await ScoreModel.findLightweight(req.user.school_id, { class_id, academic_year });
+      logRequest('GET /scores/dashboard', { responseTime: Date.now() - start, count: scores.length });
+      res.json(scores);
+    } catch (err) {
+      logError('GET /scores/dashboard', err, { responseTime: Date.now() - start });
+      next(err);
+    }
+  },
+
   async getById(req, res, next) {
     const start = Date.now();
     try {
