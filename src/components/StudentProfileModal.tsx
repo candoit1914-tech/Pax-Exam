@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, User, Phone, Calendar, Hash, GraduationCap } from 'lucide-react';
+import { X, User, Phone, Calendar, Hash, GraduationCap, Award } from 'lucide-react';
 export interface ClassInfo { id: number; name: string; }
 import { getGradePoint } from '../utils/grading';
 import { calculateAge } from '../lib/utils';
