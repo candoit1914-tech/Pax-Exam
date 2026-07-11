@@ -1,10 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassButton } from '../components/ui/Glass';
-import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useAuth } from '../contexts/AuthContext';
 import { studentAuthService } from '../services/studentAuthService';
+import { ReportCard } from '../components/ReportCard';
+import { subjectService } from '../services/subjectService';
+import { classService } from '../services/classService';
 
 export const StudentDashboardScreen = () => {
   const { user, logout } = useAuth();
@@ -13,6 +20,12 @@ export const StudentDashboardScreen = () => {
   const [scores, setScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [allScores, setAllScores] = useState<any[]>([]);
+  const [schoolProfile, setSchoolProfile] = useState<any>({});
+  const [isDownloading, setIsDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'student') {
@@ -27,13 +40,22 @@ export const StudentDashboardScreen = () => {
       const studentId = user?.student_id;
       if (!studentId) return;
 
-      const [profileData, scoresData] = await Promise.all([
+      const p = localStorage.getItem('schoolProfile');
+      if (p) { try { setSchoolProfile(JSON.parse(p)); } catch(e){} }
+
+      const [profileData, scoresData, subData, clsData, rawScores] = await Promise.all([
         studentAuthService.getStudentProfile(studentId),
-        studentAuthService.getStudentScores(studentId)
+        studentAuthService.getStudentScores(studentId),
+        subjectService.getAll(),
+        classService.getAll(),
+        (await import('../services/scoreService')).scoreService.getAll({ student_id: studentId })
       ]);
 
       setProfile(profileData);
       setScores(scoresData);
+      setSubjects(subData);
+      setClasses(clsData);
+      setAllScores(rawScores);
     } catch (err) {
       console.error('Failed to load student data:', err);
     } finally {
@@ -79,6 +101,30 @@ export const StudentDashboardScreen = () => {
     setExpandedTerms(newExpanded);
   };
 
+  const getSubjectName = (id: number) => subjects.find((s: any) => s.id === id)?.name || 'Unknown';
+
+  const handleDownloadReport = async () => {
+    if (!reportRef.current || !user?.student_id) return;
+    setIsDownloading(true);
+    const opt: any = {
+      margin: 10, filename: `${(user?.name || 'Student').replace(/\s+/g, '_')}_Report_Card.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = await html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring');
+        const base64Data = pdfBase64.split(',')[1];
+        const writeResult = await Filesystem.writeFile({ path: opt.filename, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: opt.filename, text: 'Download Report Card', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
+      } else {
+        await html2pdf().set(opt).from(reportRef.current).save();
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsDownloading(false); }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -93,7 +139,7 @@ export const StudentDashboardScreen = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50/80 to-white/40">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-xl border-b border-white/30 shadow-sm p-4 px-6">
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/30 shadow-sm p-4 px-6">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
@@ -108,6 +154,25 @@ export const StudentDashboardScreen = () => {
             <LogOut size={16} /> Logout
           </GlassButton>
         </div>
+      </div>
+
+      {/* Hidden Report Card for PDF generation */}
+      <div className="absolute left-[-9999px] top-0">
+        {profile && (
+          <div ref={reportRef}>
+            <ReportCard
+              student={{ ...profile, class_id: profile.class_id }}
+              studentScores={allScores.map((s: any) => ({ ...s, subjectName: getSubjectName(s.subject_id) }))}
+              myRanking={scores.length > 0 ? { average: Number(stats.average), position: null } : null}
+              totalInClass={null}
+              myClass={classes.find((c: any) => c.id === profile.class_id)}
+              schoolProfile={schoolProfile}
+              getSubjectName={getSubjectName}
+              term={scores.length > 0 ? scores[0]?.term || 'Current Term' : 'Current Term'}
+              academicYear={scores.length > 0 ? scores[0]?.academic_year || 'Current Year' : 'Current Year'}
+            />
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -173,6 +238,11 @@ export const StudentDashboardScreen = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">My Scores</h2>
+            {scores.length > 0 && (
+              <GlassButton onClick={handleDownloadReport} disabled={isDownloading} sizing="sm" variant="secondary">
+                <Download size={16} /> {isDownloading ? 'Generating...' : 'Download Report'}
+              </GlassButton>
+            )}
           </div>
 
           {scores.length === 0 ? (

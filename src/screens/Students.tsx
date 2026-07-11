@@ -1,13 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard, GlassInput, GlassSelect, GlassButton } from '../components/ui/Glass';
-import { Plus, X, User, Pencil, Trash2, ArrowRight, Download, GraduationCap, FileText, CheckCircle2, Search, Key, Copy, RefreshCw, Users } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
-import { Capacitor } from '@capacitor/core';
-import { Directory, Filesystem } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { TranscriptBuilder } from '../components/TranscriptBuilder';
-import { CertificateBuilder } from '../components/CertificateBuilder';
+import { Plus, X, User, Pencil, Trash2, ArrowRight, GraduationCap, CheckCircle2, Search, Key, Copy, RefreshCw, Users } from 'lucide-react';
 import { StudentProfileModal } from '../components/StudentProfileModal';
 import { calculateAge } from '../lib/utils';
 import { resizeImage } from '../utils/images';
@@ -38,11 +32,7 @@ export const StudentsScreen = () => {
   const [transitioningStudent, setTransitioningStudent] = useState<any>(null);
   const [targetClass, setTargetClass] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [viewingStudent, setViewingStudent] = useState<any>(null);
   const [profileStudent, setProfileStudent] = useState<any>(null);
-  const [docType, setDocType] = useState<'transcript' | 'certificate' | ''>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const docRef = useRef<HTMLDivElement>(null);
   const [schoolProfile, setSchoolProfile] = useState<any>({});
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -95,19 +85,14 @@ export const StudentsScreen = () => {
   };
 
   useEffect(() => {
-    if (!profileStudent?.id && !viewingStudent?.id) { setAllScores([]); return; }
-    const id = viewingStudent?.id || profileStudent?.id;
-    scoreService.getAll({ student_id: id }).then(setAllScores).catch(() => {});
-  }, [profileStudent?.id, viewingStudent?.id]);
+    if (!profileStudent?.id) { setAllScores([]); return; }
+    scoreService.getAll({ student_id: profileStudent.id }).then(setAllScores).catch(() => {});
+  }, [profileStudent?.id]);
 
-  const activeStudentId = viewingStudent?.id || profileStudent?.id;
+  const activeStudentId = profileStudent?.id;
   const studentScores = useMemo(() => allScores, [allScores]);
 
   const rankingInfo = null;
-
-  useEffect(() => {
-    if (!viewingStudent || !viewingStudent.id || students.length === 0) return;
-  }, [viewingStudent, students]);
 
   const handleOpenPromote = () => {
     setPromoteFrom(''); setPromoteTo(''); setPromoteMode('bulk');
@@ -276,27 +261,6 @@ export const StudentsScreen = () => {
     setTimeout(() => setCodeCopied(false), 2000);
   };
 
-  const handleGeneratePDF = async (filename: string) => {
-    if (!docRef.current) return;
-    setIsGenerating(true);
-    const opt: any = {
-      margin: 0, filename: `${filename}.pdf`, image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 1.5, useCORS: true, logging: false },
-      jsPDF: { unit: 'in', format: docType === 'certificate' ? 'letter' : 'a4', orientation: docType === 'certificate' ? 'landscape' : 'portrait' }
-    };
-    try {
-      if (Capacitor.isNativePlatform()) {
-        const pdfBase64 = await html2pdf().set(opt).from(docRef.current).outputPdf('datauristring');
-        const base64Data = pdfBase64.split(',')[1];
-        const writeResult = await Filesystem.writeFile({ path: opt.filename, data: base64Data, directory: Directory.Documents });
-        await Share.share({ title: opt.filename, text: `Download ${opt.filename}`, url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
-      } else {
-        await html2pdf().set(opt).from(docRef.current).save();
-      }
-    } catch (err) { console.error(err); }
-    finally { setIsGenerating(false); }
-  };
-
   const isFormOpen = isAdding || editingId !== null;
   const studentsInPromoteClass = useMemo(() => {
     if (!promoteFrom) return [];
@@ -383,35 +347,6 @@ export const StudentsScreen = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {viewingStudent && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-            <GlassCard className="max-w-4xl w-full max-h-[90vh] flex flex-col bg-white overflow-hidden p-0 relative">
-              <div className="flex justify-between items-center p-4 border-b border-slate-200 shrink-0 bg-slate-50">
-                <div className="flex gap-2">
-                  <button onClick={() => setDocType('transcript')} className={`px-4 py-2 font-bold rounded-lg ${docType === 'transcript' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>Official Transcript</button>
-                  <button onClick={() => setDocType('certificate')} className={`px-4 py-2 font-bold rounded-lg ${docType === 'certificate' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>Certificate</button>
-                </div>
-                <div className="flex gap-2">
-                  <GlassButton onClick={() => handleGeneratePDF(`${viewingStudent.name.replace(/\s+/g,'_')}_${docType}`)} className="px-4 py-2 !bg-green-600 !text-white !border-green-700">
-                    {isGenerating ? 'Generating PDF...' : <><Download size={18} /> Download PDF</>}
-                  </GlassButton>
-                  <button onClick={() => {setViewingStudent(null); setDocType('');}} className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg"><X size={24} /></button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto bg-slate-200 p-8 flex items-start justify-center relative">
-                <div ref={docRef} className="shadow-2xl shrink-0">
-                  {docType === 'transcript'
-                    ? <TranscriptBuilder student={viewingStudent} allScores={studentScores.map((s: any) => ({...s, subjectName: subjects.find((sub: any) => sub.id === s.subject_id)?.name || 'Unknown'}))} schoolProfile={schoolProfile} />
-                    : <CertificateBuilder student={viewingStudent} schoolProfile={schoolProfile} myClass={classes.find((c: any) => c.id === viewingStudent.class_id)} myRanking={null} totalInClass={null} term="" academicYear="" />
-                  }
-                </div>
-              </div>
-            </GlassCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence mode="wait">
         {isFormOpen && !isPromoting && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -485,7 +420,6 @@ export const StudentsScreen = () => {
             subjects={subjects}
             classes={classes}
             onClose={() => setProfileStudent(null)}
-            onViewDocument={(type) => { setProfileStudent(null); setViewingStudent(profileStudent); setDocType(type as any); }}
             onTransition={(s) => { setProfileStudent(null); handleOpenIndividualTransition(s); }}
           />
         )}
@@ -517,7 +451,6 @@ export const StudentsScreen = () => {
                     <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-gradient-to-l from-white via-white to-transparent pl-4 pr-1 h-full items-center absolute right-0">
                       <button onClick={(e) => { e.stopPropagation(); handleGenerateCode(student); }} title="Generate Login Code" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Key size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleOpenIndividualTransition(student); }} title="Transition" className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><ArrowRight size={16} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); setViewingStudent(student); setDocType('transcript'); }} title="Transcript" className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><FileText size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleEdit(student); }} title="Edit" className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Pencil size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id!); }} title="Delete" className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                     </div>

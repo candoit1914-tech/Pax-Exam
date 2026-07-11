@@ -20,22 +20,10 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
   const years = Object.keys(history).sort();
 
   return (
-    <div className="w-[800px] h-[1120px] bg-white relative text-slate-800 flex flex-col mx-auto border-[16px] border-double border-green-600" style={{ padding: '40px', boxSizing: 'border-box' }}>
-      {/* Watermark */}
-      <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden" style={{ userSelect: 'none' }}>
-        {schoolProfile.logo ? (
-          <img src={schoolProfile.logo} className="w-[60%] max-w-md opacity-[0.05] grayscale" alt="Watermark" />
-        ) : null}
-      </div>
-
+    <div className="w-[800px] h-[1120px] bg-white relative text-slate-800 flex flex-col mx-auto p-8" style={{ boxSizing: 'border-box' }}>
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-6 border-b-4 border-double border-slate-300 pb-6 mb-6">
-          {schoolProfile.logo ? (
-            <img src={schoolProfile.logo} className="w-24 h-24 object-contain" alt="Logo" />
-          ) : (
-            <div className="w-24 h-24 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400">LOGO</div>
-          )}
           <div className="flex-1">
             <h1 className="text-3xl font-black uppercase text-slate-900 tracking-wider mb-2">{schoolProfile.name || 'Ok20'}</h1>
             <p className="text-sm font-semibold text-slate-600">{schoolProfile.address} | {schoolProfile.location}</p>
@@ -48,15 +36,15 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
           <div className="col-span-2 lg:col-span-1">
             <p className="text-xs font-bold text-slate-500 uppercase">Student Name</p>
-            <p className="font-black text-lg text-slate-900">{student.name}</p>
+            <p className="font-black text-xl text-slate-900">{student.name}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Gender / Reg No.</p>
-             <p className="font-black text-lg text-slate-900">{student.gender} / {student.id.toString().padStart(4, '0')}</p>
+             <p className="font-black text-xl text-slate-900">{student.gender} / {student.id.toString().padStart(4, '0')}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Year of Admission</p>
-             <p className="font-black text-lg text-slate-900">{student.admission_year || 'N/A'}</p>
+             <p className="font-black text-xl text-slate-900">{student.admission_year || 'N/A'}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Status</p>
@@ -86,11 +74,11 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
                        <div key={tm} className="flex-1 border border-slate-200 p-2 rounded-lg bg-white shadow-sm flex flex-col h-full">
                          <h3 className="text-xs font-bold text-slate-700 uppercase mb-2 border-b border-slate-100 pb-1">{tm}</h3>
                          {hasScores ? (
-                           <ul className="flex flex-col gap-1 flex-1">
-                             {tScores.map((score: any) => (
-                               <li key={score.id} className="flex justify-between items-start text-[11px]">
-                                 <span className="flex-1 text-slate-600 font-semibold leading-tight pr-1 break-words pb-0.5">{score.subjectName}</span>
-                                 <span className="font-black text-slate-900 shrink-0">{score.total} <span className="text-[9px] text-slate-400 font-normal">({score.grade})</span></span>
+                            <ul className="flex flex-col gap-1 flex-1">
+                              {tScores.map((score: any) => (
+                                <li key={score.id} className="flex justify-between items-start text-xs">
+                                  <span className="flex-1 text-slate-600 font-semibold leading-tight pr-1 break-words pb-0.5">{score.subjectName}</span>
+                                  <span className="font-black text-slate-900 shrink-0">{score.total} <span className="text-[10px] text-slate-400 font-normal">({score.grade})</span></span>
                                </li>
                              ))}
                            </ul>
@@ -98,16 +86,16 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
                            <div className="flex-1 flex items-center justify-center text-[10px] text-slate-400 italic">No records</div>
                          )}
                          {hasScores && (
-                           <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col items-center bg-slate-50 p-1 rounded gap-1">
-                             <div className="flex justify-between items-center w-full">
-                               <span className="text-[10px] font-bold text-slate-500 uppercase">Average</span>
-                               <span className="font-black text-sm text-slate-800">{avg}%</span>
-                             </div>
-                             <div className="flex justify-between items-center w-full border-t border-slate-200/50 pt-1">
-                               <span className="text-[10px] font-bold text-slate-500 uppercase">GPA</span>
-                               <span className="font-black text-sm text-slate-800">{gpa.toFixed(2)}</span>
-                             </div>
-                           </div>
+                            <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col items-center bg-slate-50 p-1 rounded gap-1">
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase">Average</span>
+                                <span className="font-black text-base text-slate-800">{avg}%</span>
+                              </div>
+                              <div className="flex justify-between items-center w-full border-t border-slate-200/50 pt-1">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase">GPA</span>
+                                <span className="font-black text-base text-slate-800">{gpa.toFixed(2)}</span>
+                              </div>
+                            </div>
                          )}
                        </div>
                      )
