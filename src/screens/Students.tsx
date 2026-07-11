@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard, GlassInput, GlassSelect, GlassButton } from '../components/ui/Glass';
-import { Plus, X, User, Pencil, Trash2, ArrowRight, Download, GraduationCap, FileText, CheckCircle2, Search } from 'lucide-react';
+import { Plus, X, User, Pencil, Trash2, ArrowRight, Download, GraduationCap, FileText, CheckCircle2, Search, Key, Copy, RefreshCw, Users } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
@@ -13,6 +13,7 @@ import { calculateAge } from '../lib/utils';
 import { resizeImage } from '../utils/images';
 import { SearchableStudentSelect } from '../components/SearchableStudentSelect';
 import { studentService } from '../services/studentService';
+import { studentCodesService } from '../services/studentCodesService';
 import { classService } from '../services/classService';
 import { subjectService } from '../services/subjectService';
 import { scoreService } from '../services/scoreService';
@@ -47,6 +48,16 @@ export const StudentsScreen = () => {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState('all');
   const [formStatus, setFormStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Login code management state
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [selectedStudentForCode, setSelectedStudentForCode] = useState<any>(null);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [bulkCodeMode, setBulkCodeMode] = useState(false);
+  const [bulkCodeClass, setBulkCodeClass] = useState('');
+  const [bulkCodes, setBulkCodes] = useState<any[]>([]);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -205,6 +216,66 @@ export const StudentsScreen = () => {
     }
   };
 
+  const handleGenerateCode = async (student: any) => {
+    setSelectedStudentForCode(student);
+    setShowCodeModal(true);
+    setGeneratedCode('');
+    setCodeLoading(true);
+    try {
+      const result = await studentCodesService.generateCode(student.id);
+      setGeneratedCode(result.code);
+    } catch (err) {
+      console.error('Failed to generate code:', err);
+      alert('Failed to generate login code. Please try again.');
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
+  const handleRegenerateCode = async () => {
+    if (!selectedStudentForCode) return;
+    setCodeLoading(true);
+    try {
+      const result = await studentCodesService.regenerateCode(selectedStudentForCode.id);
+      setGeneratedCode(result.code);
+      setCodeCopied(false);
+    } catch (err) {
+      console.error('Failed to regenerate code:', err);
+      alert('Failed to regenerate code. Please try again.');
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(generatedCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  const handleBulkGenerateCodes = async () => {
+    setCodeLoading(true);
+    setBulkCodes([]);
+    try {
+      const params = bulkCodeMode && bulkCodeClass ? { classId: parseInt(bulkCodeClass) } : {};
+      const result = await studentCodesService.generateBulkCodes(params);
+      setBulkCodes(result.codes);
+      await loadData(); // Refresh student list
+    } catch (err) {
+      console.error('Failed to generate bulk codes:', err);
+      alert('Failed to generate bulk codes. Please try again.');
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
+  const handleCopyAllCodes = () => {
+    const text = bulkCodes.map(c => `${c.name}: ${c.code}`).join('\n');
+    navigator.clipboard.writeText(text);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
   const handleGeneratePDF = async (filename: string) => {
     if (!docRef.current) return;
     setIsGenerating(true);
@@ -257,6 +328,7 @@ export const StudentsScreen = () => {
           ) : (
             <>
               <GlassButton variant="secondary" onClick={() => setIsSelectionMode(true)} className="px-4 py-2 w-auto rounded-xl"><span className="font-bold text-sm tracking-wide">Select</span></GlassButton>
+              <GlassButton variant="secondary" onClick={() => { setBulkCodeMode(true); setBulkCodes([]); setShowCodeModal(true); }} className="px-4 py-2 w-auto rounded-xl" title="Generate Login Codes"><Key size={20} /></GlassButton>
               <GlassButton variant="primary" onClick={() => { resetForm(); setIsAdding(true); }} className="px-4 py-2 w-auto rounded-xl"><Plus size={20} /></GlassButton>
               <GlassButton variant="secondary" onClick={handleOpenPromote} className="px-4 py-2 w-auto rounded-xl" title="Transition Students"><ArrowRight size={20} /></GlassButton>
             </>
@@ -443,6 +515,7 @@ export const StudentsScreen = () => {
                   </div>
                   {!isSelectionMode && (
                     <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-gradient-to-l from-white via-white to-transparent pl-4 pr-1 h-full items-center absolute right-0">
+                      <button onClick={(e) => { e.stopPropagation(); handleGenerateCode(student); }} title="Generate Login Code" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Key size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleOpenIndividualTransition(student); }} title="Transition" className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><ArrowRight size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); setViewingStudent(student); setDocType('transcript'); }} title="Transcript" className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><FileText size={16} /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleEdit(student); }} title="Edit" className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Pencil size={16} /></button>
@@ -453,7 +526,103 @@ export const StudentsScreen = () => {
               </motion.div>
             );
           })}
-        </AnimatePresence>
+      </AnimatePresence>
+
+      {/* Login Code Modal */}
+      <AnimatePresence>
+        {showCodeModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+            <GlassCard className="max-w-md w-full bg-white overflow-hidden p-0 relative">
+              <div className="flex justify-between items-center p-4 border-b border-slate-200 shrink-0 bg-slate-50">
+                <h2 className="font-bold text-slate-900">
+                  {bulkCodeMode ? 'Generate Bulk Login Codes' : 'Student Login Code'}
+                </h2>
+                <button onClick={() => { setShowCodeModal(false); setBulkCodeMode(false); setBulkCodes([]); }} className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {bulkCodeMode ? (
+                  <>
+                    <p className="text-xs text-slate-600">Generate login codes for all active students. Choose to generate for a specific class or all students.</p>
+                    
+                    <GlassSelect
+                      label="Class (Optional)"
+                      value={bulkCodeClass}
+                      onChange={e => setBulkCodeClass(e.target.value)}
+                      options={classes.map((c: any) => ({ value: c.id!, label: c.name }))}
+                      sizing="sm"
+                    />
+
+                    <GlassButton onClick={handleBulkGenerateCodes} disabled={codeLoading} className="w-full">
+                      {codeLoading ? <RefreshCw size={16} className="animate-spin" /> : <Key size={16} />}
+                      {codeLoading ? 'Generating...' : 'Generate Codes'}
+                    </GlassButton>
+
+                    {bulkCodes.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs font-bold text-slate-700">Generated Codes ({bulkCodes.length})</p>
+                          <button onClick={handleCopyAllCodes} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                            <Copy size={12} /> {codeCopied ? 'Copied!' : 'Copy All'}
+                          </button>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto space-y-2">
+                          {bulkCodes.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
+                              <span className="text-xs font-medium text-slate-700 truncate">{item.name}</span>
+                              <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{item.code}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
+                        <Key size={24} className="text-blue-600" />
+                      </div>
+                      <p className="font-bold text-slate-900">{selectedStudentForCode?.name}</p>
+                      <p className="text-xs text-slate-500 mt-1">Student ID: #{selectedStudentForCode?.id}</p>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Login Code</p>
+                      {codeLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <RefreshCw size={24} className="animate-spin text-blue-500" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-mono font-black text-blue-600 tracking-wider">{generatedCode}</span>
+                          <button onClick={handleCopyCode} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Copy size={18} />
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-500 mt-2">
+                        {codeCopied ? 'Copied to clipboard!' : 'Share this code with the student. They can use it to login.'}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <GlassButton onClick={handleRegenerateCode} disabled={codeLoading} variant="secondary" className="flex-1">
+                        <RefreshCw size={16} /> Regenerate
+                      </GlassButton>
+                      <GlassButton onClick={handleCopyCode} disabled={!generatedCode} className="flex-1">
+                        <Copy size={16} /> Copy Code
+                      </GlassButton>
+                    </div>
+                  </>
+                )}
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
     </div>
   );

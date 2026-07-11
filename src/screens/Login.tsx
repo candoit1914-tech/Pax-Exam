@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
-import { Lock, LogIn, Loader2, Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { Lock, LogIn, Loader2, Eye, EyeOff, GraduationCap, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const LoginScreen = () => {
@@ -85,10 +85,16 @@ export const LoginScreen = () => {
           </GlassButton>
         </div>
 
-        <Link to="/student-portal" className="flex items-center justify-center gap-2 w-full py-2 text-[11px] font-bold text-blue-700 bg-blue-50/50 rounded-xl border border-blue-200/60 hover:bg-blue-100/50 transition-all">
-          <GraduationCap size={16} />
-          Student Portal — View Report
-        </Link>
+        <div className="flex flex-col gap-2 w-full pt-2">
+          <Link to="/student-login" className="flex items-center justify-center gap-2 w-full py-2.5 text-[11px] font-bold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md">
+            <KeyRound size={16} />
+            Student Login — Use Special Code
+          </Link>
+          <Link to="/student-portal" className="flex items-center justify-center gap-2 w-full py-2 text-[11px] font-bold text-blue-700 bg-blue-50/50 rounded-xl border border-blue-200/60 hover:bg-blue-100/50 transition-all">
+            <GraduationCap size={16} />
+            Student Portal — View Report (Quick Access)
+          </Link>
+        </div>
       </form>
     </GlassCard>
   );

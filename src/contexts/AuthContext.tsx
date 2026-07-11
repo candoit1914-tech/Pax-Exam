@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { studentAuthService } from '../services/studentAuthService';
 
 interface User {
   id: number;
@@ -8,6 +9,10 @@ interface User {
   name: string;
   school_id: number;
   school_name?: string;
+  student_id?: number;
+  student_name?: string;
+  class_name?: string;
+  class_id?: number;
 }
 
 interface AuthContextType {
@@ -15,6 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginStudent: (loginCode: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -24,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   login: async () => {},
+  loginStudent: async () => {},
   logout: async () => {},
   refreshUser: async () => {},
 });
@@ -32,7 +39,7 @@ export const useAuth = () => useContext(AuthContext);
 
 const APP_VERSION = '2.0.0';
 
-const APP_STORAGE_KEYS = ['accessToken', 'refreshToken', 'user', 'auth', 'appVersion'];
+const APP_STORAGE_KEYS = ['accessToken', 'refreshToken', 'user', 'auth', 'appVersion', 'userType'];
 
 function clearAppStorage() {
   APP_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
@@ -75,17 +82,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('auth', 'true');
     localStorage.setItem('appVersion', APP_VERSION);
+    localStorage.setItem('userType', 'admin');
+    setUser(data.user);
+  }, []);
+
+  const loginStudent = useCallback(async (loginCode: string) => {
+    const data = await studentAuthService.login(loginCode);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('auth', 'true');
+    localStorage.setItem('appVersion', APP_VERSION);
+    localStorage.setItem('userType', 'student');
     setUser(data.user);
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    const userType = localStorage.getItem('userType');
+    if (userType === 'student') {
+      await studentAuthService.logout();
+    } else {
+      await authService.logout();
+    }
     setUser(null);
   }, []);
 
   const refreshUser = useCallback(async () => {
     try {
-      const userData = await authService.getMe();
+      const userType = localStorage.getItem('userType');
+      let userData;
+      if (userType === 'student') {
+        userData = await studentAuthService.getMe();
+      } else {
+        userData = await authService.getMe();
+      }
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
     } catch {
@@ -99,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthenticated: !!user,
       isLoading,
       login,
+      loginStudent,
       logout,
       refreshUser,
     }}>

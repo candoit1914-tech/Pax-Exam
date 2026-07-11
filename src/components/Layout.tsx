@@ -36,9 +36,28 @@ export const Layout: React.FC = () => {
     return 'Teacher';
   }, [role]);
 
-  const isUnprotectedRoute = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/student-portal';
+  const isUnprotectedRoute = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/student-portal' || location.pathname === '/student-login';
+  const isStudentRoute = location.pathname === '/student-dashboard';
 
   if (isUnprotectedRoute) {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2 }}
+          className="w-full"
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // For student dashboard, render without sidebar/nav
+  if (isStudentRoute) {
     return (
       <AnimatePresence mode="wait">
         <motion.div

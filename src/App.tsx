@@ -12,6 +12,8 @@ const ReportsScreen = lazy(() => import('./screens/Reports').then(m => ({ defaul
 const SettingsScreen = lazy(() => import('./screens/Settings').then(m => ({ default: m.SettingsScreen })));
 const TeacherManagementScreen = lazy(() => import('./screens/TeacherManagement').then(m => ({ default: m.TeacherManagementScreen })));
 const StudentPortalScreen = lazy(() => import('./screens/StudentPortal').then(m => ({ default: m.StudentPortalScreen })));
+const StudentLoginScreen = lazy(() => import('./screens/StudentLogin').then(m => ({ default: m.StudentLoginScreen })));
+const StudentDashboardScreen = lazy(() => import('./screens/StudentDashboard').then(m => ({ default: m.StudentDashboardScreen })));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -19,7 +21,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated && localStorage.getItem('auth') !== 'true') {
-      navigate('/login', { replace: true });
+      const userType = localStorage.getItem('userType');
+      if (userType === 'student') {
+        navigate('/student-login', { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
     }
   }, [isAuthenticated, isLoading, navigate]);
   if (isLoading) return null;
@@ -40,10 +47,19 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated && localStorage.getItem('auth') !== 'true') {
-      navigate('/login', { replace: true });
+      const userType = localStorage.getItem('userType');
+      if (userType === 'student') {
+        navigate('/student-login', { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
       return;
     }
     const role = user?.role || JSON.parse(localStorage.getItem('user') || '{}').role;
+    if (role === 'student') {
+      navigate('/student-dashboard', { replace: true });
+      return;
+    }
     if (role !== 'super_admin' && role !== 'school_admin') {
       navigate('/scores', { replace: true });
     }
@@ -69,6 +85,8 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Redirect to="/login" />} />
             <Route path="login" element={<Suspense fallback={<LoadingFallback />}><LoginScreen /></Suspense>} />
+            <Route path="student-login" element={<Suspense fallback={<LoadingFallback />}><StudentLoginScreen /></Suspense>} />
+            <Route path="student-dashboard" element={<ProtectedRoute><Suspense fallback={<LoadingFallback />}><StudentDashboardScreen /></Suspense></ProtectedRoute>} />
             <Route path="student-portal" element={<Suspense fallback={<LoadingFallback />}><StudentPortalScreen /></Suspense>} />
             <Route path="dashboard" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><DashboardScreen /></Suspense></AdminRoute>} />
             <Route path="students" element={<AdminRoute><Suspense fallback={<LoadingFallback />}><StudentsScreen /></Suspense></AdminRoute>} />
