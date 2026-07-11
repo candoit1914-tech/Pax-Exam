@@ -20,6 +20,7 @@ import reportRoutes from './routes/report.routes.js';
 import portalRoutes from './routes/portal.routes.js';
 import studentAuthRoutes from './routes/studentAuth.routes.js';
 import studentCodesRoutes from './routes/studentCodes.routes.js';
+import migrationRoutes from './routes/migration.routes.js';
 
 const app = express();
 
@@ -94,6 +95,8 @@ app.use('/api/student-auth', studentAuthRoutes);
 app.use('/student-auth', studentAuthRoutes);
 app.use('/api/student-codes', studentCodesRoutes);
 app.use('/student-codes', studentCodesRoutes);
+app.use('/api/migration', migrationRoutes);
+app.use('/migration', migrationRoutes);
 
 const distPath = path.join(__dirname, '..', '..', 'dist');
 if (fs.existsSync(distPath)) {
