@@ -56,21 +56,12 @@ export const Layout: React.FC = () => {
     );
   }
 
-  // For student dashboard, render without sidebar/nav
+  // For student dashboard, render without sidebar/nav — full screen scrollable
   if (isStudentRoute) {
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-          className="w-full"
-        >
-          <Outlet />
-        </motion.div>
-      </AnimatePresence>
+      <div className="w-full h-screen overflow-y-auto">
+        <Outlet />
+      </div>
     );
   }
 
