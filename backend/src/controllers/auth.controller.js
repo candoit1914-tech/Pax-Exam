@@ -232,6 +232,11 @@ export const AuthController = {
         name
       });
 
+      await pool.query(
+        'INSERT INTO teachers (school_id, user_id, name, email) VALUES ($1, $2, $3, $4)',
+        [req.user.school_id, user.id, name, sanitizedEmail]
+      );
+
       res.status(201).json({
         message: 'Teacher created successfully.',
         credentials: { email: sanitizedEmail, password },

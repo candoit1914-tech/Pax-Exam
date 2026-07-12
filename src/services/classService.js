@@ -6,6 +6,11 @@ export const classService = {
     return data;
   },
 
+  async getMy() {
+    const { data } = await api.get('/classes/my');
+    return data;
+  },
+
   async getById(id) {
     const { data } = await api.get(`/classes/${id}`);
     return data;

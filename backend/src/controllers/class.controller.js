@@ -8,6 +8,13 @@ export const ClassController = {
     } catch (err) { next(err); }
   },
 
+  async getMyClasses(req, res, next) {
+    try {
+      const classes = await ClassModel.findByTeacherUserId(req.user.id, req.user.school_id);
+      res.json(classes);
+    } catch (err) { next(err); }
+  },
+
   async getById(req, res, next) {
     try {
       const cls = await ClassModel.findById(req.params.id, req.user.school_id);

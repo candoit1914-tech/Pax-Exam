@@ -53,5 +53,20 @@ export const ClassModel = {
   async count(schoolId) {
     const result = await pool.query('SELECT COUNT(*) FROM classes WHERE school_id = $1', [schoolId]);
     return parseInt(result.rows[0].count);
+  },
+
+  async findByTeacherUserId(userId, schoolId) {
+    const result = await pool.query(
+      `SELECT c.*, (SELECT COUNT(*) FROM students WHERE class_id = c.id) as student_count
+       FROM classes c
+       WHERE c.school_id = $2
+         AND (
+           c.teacher_id IN (SELECT id FROM teachers WHERE user_id = $1)
+           OR LOWER(TRIM(c.teacher_name)) = LOWER(TRIM((SELECT name FROM users WHERE id = $1)))
+         )
+       ORDER BY c.name`,
+      [userId, schoolId]
+    );
+    return result.rows;
   }
 };

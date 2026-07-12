@@ -37,14 +37,7 @@ export const ScoreEntryScreen = () => {
   const [relevantScores, setRelevantScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const classes = useMemo(() => {
-    if (isAdmin) return allClasses;
-    const teacherName = currentUser?.name || '';
-    return allClasses.filter((c: any) => {
-      const tName = (c.teacher_name || '').toLowerCase().trim();
-      return tName === teacherName.toLowerCase().trim();
-    });
-  }, [allClasses, isAdmin, currentUser]);
+  const classes = allClasses;
 
   const filteredStudents = useMemo(() => {
     if (isAdmin) return students;
@@ -53,16 +46,24 @@ export const ScoreEntryScreen = () => {
   }, [students, classes, isAdmin]);
 
   useEffect(() => {
-    Promise.all([
-      studentService.getAll(),
-      subjectService.getAll(),
-      classService.getAll(),
-    ]).then(([s, sub, c]) => {
-      setStudents(s);
-      setSubjects(sub);
-      setAllClasses(c);
-    }).catch(console.error).finally(() => setLoading(false));
-  }, []);
+    const load = async () => {
+      try {
+        const [s, sub] = await Promise.all([
+          studentService.getAll(),
+          subjectService.getAll(),
+        ]);
+        setStudents(s);
+        setSubjects(sub);
+        const c = isAdmin ? await classService.getAll() : await classService.getMy();
+        setAllClasses(c);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [isAdmin]);
 
   useEffect(() => {
     const fetchScores = async () => {
