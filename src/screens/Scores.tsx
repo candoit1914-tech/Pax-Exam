@@ -39,11 +39,7 @@ export const ScoreEntryScreen = () => {
 
   const classes = allClasses;
 
-  const filteredStudents = useMemo(() => {
-    if (isAdmin) return students;
-    const classIds = classes.map((c: any) => c.id);
-    return students.filter((s: any) => classIds.includes(s.class_id));
-  }, [students, classes, isAdmin]);
+  const filteredStudents = students;
 
   useEffect(() => {
     const load = async () => {
@@ -54,7 +50,7 @@ export const ScoreEntryScreen = () => {
         ]);
         setStudents(s);
         setSubjects(sub);
-        const c = isAdmin ? await classService.getAll() : await classService.getMy();
+        const c = await classService.getAll();
         setAllClasses(c);
       } catch (err) {
         console.error(err);
@@ -63,7 +59,7 @@ export const ScoreEntryScreen = () => {
       }
     };
     load();
-  }, [isAdmin]);
+  }, []);
 
   useEffect(() => {
     const fetchScores = async () => {
