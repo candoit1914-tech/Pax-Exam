@@ -151,7 +151,7 @@ export const ScoreEntryScreen = () => {
           <motion.div key="single" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <GlassCard droplet className="p-3 sm:p-4">
               <form onSubmit={handleSaveSingle} className="flex flex-col gap-4">
-                <SearchableStudentSelect label="Select Student" students={filteredStudents} value={studentId} onChange={setStudentId} sizing="sm" required />
+                <SearchableStudentSelect label="Select Student" students={filteredStudents} classes={classes} value={studentId} onChange={setStudentId} sizing="sm" required />
                 <GlassSelect label="Select Subject" value={subjectId} sizing="sm" onChange={e => setSubjectId(e.target.value)} options={[{ value: '', label: 'Choose a subject' }, ...subjects.map((s: any) => ({ value: String(s.id), label: s.name }))]} required />
                 <div className="grid grid-cols-2 gap-4 max-w-xs">
                   <div className="relative">
@@ -171,7 +171,7 @@ export const ScoreEntryScreen = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><TrendingUp className="text-blue-600" size={20} />{historyStudentId ? 'Score History' : 'Recent Entries'}</h2>
                 <div className="w-full sm:w-64 relative z-30">
-                  <SearchableStudentSelect label="Filter by Student" students={filteredStudents} value={historyStudentId} onChange={setHistoryStudentId} sizing="sm" />
+                  <SearchableStudentSelect label="Filter by Student" students={filteredStudents} classes={classes} value={historyStudentId} onChange={setHistoryStudentId} sizing="sm" />
                 </div>
               </div>
               <div className="flex flex-col gap-3">
