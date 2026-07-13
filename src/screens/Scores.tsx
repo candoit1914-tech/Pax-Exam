@@ -98,7 +98,7 @@ export const ScoreEntryScreen = () => {
       class_score: cScore,
       exam_score: eScore,
       term,
-      academic_year
+      academic_year: academicYear
     });
 
     setClassScore('');

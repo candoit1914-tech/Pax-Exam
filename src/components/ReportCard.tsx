@@ -174,9 +174,24 @@ export const ReportCard = ({
 
           {/* Footer Signatures */}
           <div className="mt-4 mb-2 flex justify-between items-end pb-2 relative z-10 w-full px-4 sm:px-12">
-              <div className="text-left shrink-0 max-w-[200px]">
+              <div className="text-left shrink-0 max-w-[200px] flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center relative shrink-0 shadow-md border-[2px] border-amber-600 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 mb-2">
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-2 -z-10">
+                    <div className="w-4 h-8 bg-red-700 shadow-md transform origin-top rotate-[15deg] ml-[-10px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
+                    <div className="w-4 h-8 bg-red-700 shadow-md transform origin-top -rotate-[15deg] mr-[-10px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
+                  </div>
+                  <div className="absolute inset-[3px] rounded-full border border-amber-300 border-dashed opacity-70"></div>
+                  <div className="absolute inset-[5px] rounded-full border-2 border-amber-700 flex items-center justify-center bg-gradient-to-tl from-amber-600 to-amber-400 shadow-inner">
+                    <div className="absolute inset-[2px] rounded-full border border-amber-200 border-dotted opacity-60"></div>
+                    <div className="text-[8px] font-black uppercase text-amber-900 text-center leading-[1.1] tracking-widest transform -rotate-12">
+                      Official<br/>
+                      <span className="text-amber-100 text-[10px] drop-shadow-md inline-block my-0.5">★</span><br/>
+                      Seal
+                    </div>
+                  </div>
+                </div>
                 <p className="text-[10px] font-black uppercase text-slate-800 tracking-widest mb-1.5 underline decoration-green-600 underline-offset-4">Authentication</p>
-                <p className="text-[9px] text-slate-500 font-bold leading-tight uppercase italic">
+                <p className="text-[9px] text-slate-500 font-bold leading-tight uppercase italic text-center">
                   This academic report is officially issued by {schoolProfile.name}. Any alterations render this document null and void.
                 </p>
               </div>
