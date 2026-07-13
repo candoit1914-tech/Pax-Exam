@@ -68,22 +68,12 @@ export const ReportCard = ({
           {/* Header */}
           <div className="flex flex-col mb-3 pb-3 border-b-4 border-[#cbd5e1]">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
-              <div className="flex items-start gap-4 sm:gap-6 flex-1 min-w-0">
-                {schoolProfile.logo ? (
-                  <img src={schoolProfile.logo} className="w-20 h-20 object-contain rounded-lg border border-[#e2e8f0] shrink-0" alt="School Logo" />
-                ) : (
-                  <div className="w-20 h-20 bg-[#f8fafc] rounded-lg flex items-center justify-center text-[#94a3b8] font-bold border border-[#e2e8f0] uppercase tracking-widest text-[10px] shrink-0">Logo</div>
-                )}
-                <div className="flex flex-col items-start min-w-0">
-                  <div className="flex items-start gap-4 w-full">
-                    <div className="flex flex-col">
-                      <h1 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
-                      {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
-                      {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
-                    </div>
-                    {student?.photo && (
-                      <img src={student.photo} className="w-20 h-20 rounded-md object-cover border border-[#cbd5e1] shrink-0 sm:hidden" alt="Student Thumbnail" />
-                    )}
+              <div className="flex flex-col items-start min-w-0">
+                <div className="flex items-start gap-4 w-full">
+                  <div className="flex flex-col">
+                    <h1 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
+                    {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
+                    {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
                   </div>
                 </div>
               </div>
@@ -174,24 +164,9 @@ export const ReportCard = ({
 
           {/* Footer Signatures */}
           <div className="mt-4 mb-2 flex justify-between items-end pb-2 relative z-10 w-full px-4 sm:px-12">
-              <div className="text-left shrink-0 max-w-[200px] flex flex-col items-center">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center relative shrink-0 shadow-md border-[2px] border-amber-600 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 mb-2">
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-2 -z-10">
-                    <div className="w-4 h-8 bg-red-700 shadow-md transform origin-top rotate-[15deg] ml-[-10px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
-                    <div className="w-4 h-8 bg-red-700 shadow-md transform origin-top -rotate-[15deg] mr-[-10px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
-                  </div>
-                  <div className="absolute inset-[3px] rounded-full border border-amber-300 border-dashed opacity-70"></div>
-                  <div className="absolute inset-[5px] rounded-full border-2 border-amber-700 flex items-center justify-center bg-gradient-to-tl from-amber-600 to-amber-400 shadow-inner">
-                    <div className="absolute inset-[2px] rounded-full border border-amber-200 border-dotted opacity-60"></div>
-                    <div className="text-[8px] font-black uppercase text-amber-900 text-center leading-[1.1] tracking-widest transform -rotate-12">
-                      Official<br/>
-                      <span className="text-amber-100 text-[10px] drop-shadow-md inline-block my-0.5">★</span><br/>
-                      Seal
-                    </div>
-                  </div>
-                </div>
+              <div className="text-left shrink-0 max-w-[200px]">
                 <p className="text-[10px] font-black uppercase text-slate-800 tracking-widest mb-1.5 underline decoration-green-600 underline-offset-4">Authentication</p>
-                <p className="text-[9px] text-slate-500 font-bold leading-tight uppercase italic text-center">
+                <p className="text-[9px] text-slate-500 font-bold leading-tight uppercase italic">
                   This academic report is officially issued by {schoolProfile.name}. Any alterations render this document null and void.
                 </p>
               </div>
