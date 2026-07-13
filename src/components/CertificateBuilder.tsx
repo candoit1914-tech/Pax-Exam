@@ -21,7 +21,19 @@ export const CertificateBuilder = ({ student, schoolProfile, myClass, myRanking,
       <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden" style={{ userSelect: 'none' }}>
         {schoolProfile.logo ? (
           <img src={schoolProfile.logo} className="w-[50%] max-w-lg opacity-[0.03] grayscale" alt="Watermark" />
-        ) : null}
+        ) : (
+          <div className="opacity-[0.04] flex flex-col justify-center w-full h-full">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="flex whitespace-nowrap text-slate-900 font-black text-2xl" style={{ transform: `rotate(-20deg) translateY(${i * 120 - 600}px) translateX(-200px)`, letterSpacing: '6px' }}>
+                {Array.from({ length: 8 }).map((_, j) => (
+                  <span key={j} style={{ display: 'inline-block', transform: `translateY(${Math.sin(j) * 25}px)`, marginRight: '60px' }}>
+                    {schoolProfile.name}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="relative z-10 flex flex-col h-full items-center text-center px-[100px] pt-[40px] pb-[40px]">
@@ -31,8 +43,8 @@ export const CertificateBuilder = ({ student, schoolProfile, myClass, myRanking,
            <div className="h-20 mb-4 flex items-center justify-center text-slate-300 font-black tracking-widest uppercase">LOGO</div>
         )}
         
-        <h1 className="text-3xl font-black uppercase tracking-widest text-slate-900 mb-2">{schoolProfile.name || 'Ok20'}</h1>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">{schoolProfile.location || 'City, Country'}</p>
+        <h1 className="text-3xl font-black uppercase tracking-widest text-slate-900 mb-2">{schoolProfile.name}</h1>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">{schoolProfile.address || schoolProfile.location}</p>
 
         <h2 className="text-5xl font-black text-amber-600 mb-6" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
           {isGraduating ? 'Certificate of Completion' : 'Certificate of Excellence'}

@@ -25,7 +25,19 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
       <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden" style={{ userSelect: 'none' }}>
         {schoolProfile.logo ? (
           <img src={schoolProfile.logo} className="w-[60%] max-w-md opacity-[0.05] grayscale" alt="Watermark" />
-        ) : null}
+        ) : (
+          <div className="opacity-[0.04] flex flex-col justify-center w-full h-full">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} className="flex whitespace-nowrap text-slate-900 font-black text-2xl" style={{ transform: `rotate(-20deg) translateY(${i * 100 - 800}px) translateX(-200px)`, letterSpacing: '6px' }}>
+                {Array.from({ length: 12 }).map((_, j) => (
+                  <span key={j} style={{ display: 'inline-block', transform: `translateY(${Math.sin(j) * 25}px)`, marginRight: '60px' }}>
+                    {schoolProfile.name}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="relative z-10 flex flex-col h-full">
@@ -37,7 +49,7 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
             <div className="w-24 h-24 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400">LOGO</div>
           )}
           <div className="flex-1">
-            <h1 className="text-3xl font-black uppercase text-slate-900 tracking-wider mb-2">{schoolProfile.name || 'Ok20'}</h1>
+            <h1 className="text-3xl font-black uppercase text-slate-900 tracking-wider mb-2">{schoolProfile.name}</h1>
             <p className="text-sm font-semibold text-slate-600">{schoolProfile.address} | {schoolProfile.location}</p>
             <p className="text-sm font-semibold text-slate-600">{schoolProfile.phone} | {schoolProfile.email}</p>
             <div className="inline-block px-4 py-1 bg-slate-800 text-white font-bold tracking-widest text-sm mt-3">OFFICIAL ACADEMIC TRANSCRIPT</div>
