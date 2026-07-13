@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, User, Phone, Calendar, Hash, GraduationCap, Award } from 'lucide-react';
+import { X, User, Phone, Calendar, Hash, GraduationCap, FileText, Award } from 'lucide-react';
 export interface ClassInfo { id: number; name: string; }
 import { getGradePoint } from '../utils/grading';
 import { calculateAge } from '../lib/utils';
@@ -12,10 +12,11 @@ interface StudentProfileModalProps {
   subjects?: any[];
   classes: ClassInfo[];
   onClose: () => void;
+  onViewDocument?: (docType: string) => void;
   onTransition?: (student: any) => void;
 }
 
-export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, allScores, classes, onClose, onTransition }) => {
+export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, allScores, classes, onClose, onViewDocument, onTransition }) => {
   if (!student) return null;
 
   const getClassName = (cid: number) => classes.find(c => c.id === cid)?.name || 'Unknown';
@@ -80,6 +81,16 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ studen
                 <button onClick={() => onTransition(student)} className="flex-1 py-2 px-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors shadow-md">
                   <GraduationCap size={14} /> Move Class
                 </button>
+              )}
+              {onViewDocument && (
+                <>
+                  <button onClick={() => onViewDocument('transcript')} className="flex-1 py-2 px-3 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors">
+                    <FileText size={14} /> Transcript
+                  </button>
+                  <button onClick={() => onViewDocument('certificate')} className="flex-1 py-2 px-3 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors">
+                    <Award size={14} /> Certificate
+                  </button>
+                </>
               )}
            </div>
 

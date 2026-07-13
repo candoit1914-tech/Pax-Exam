@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassInput } from './ui/Glass';
-import { calculateTotal, getGrade } from '../utils/grading';
+
 import { CheckCircle2, Save } from 'lucide-react';
 import { studentService } from '../services/studentService';
 import { scoreService } from '../services/scoreService';
@@ -62,6 +62,8 @@ export const BatchScoreEntry: React.FC<BatchScoreEntryProps> = ({ classId, subje
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const scoresToSave: any[] = [];
+
       for (const student of students) {
         const studentId = student.id!;
         const cStr = scores[studentId]?.classScore;
@@ -75,31 +77,22 @@ export const BatchScoreEntry: React.FC<BatchScoreEntryProps> = ({ classId, subje
         if (cScore > 50 || cScore < 0 || isNaN(cScore)) continue;
         if (eScore > 50 || eScore < 0 || isNaN(eScore)) continue;
 
-        const total = calculateTotal(cScore, eScore);
-        const grade = getGrade(total);
-
-        const existing = existingScores.find((s: any) => s.student_id === studentId);
-
-        if (existing) {
-          await scoreService.update(existing.id, {
-            class_score: cScore,
-            exam_score: eScore,
-            total,
-            grade
-          });
-        } else {
-          await scoreService.create({
-            student_id: studentId,
-            subject_id: subjectId,
-            class_score: cScore,
-            exam_score: eScore,
-            total,
-            grade,
-            term,
-            academic_year: academicYear
-          });
-        }
+        scoresToSave.push({
+          student_id: studentId,
+          subject_id: subjectId,
+          class_score: cScore,
+          exam_score: eScore,
+          term,
+          academic_year: academicYear
+        });
       }
+
+      if (scoresToSave.length > 0) {
+        await scoreService.bulkUpsert(scoresToSave);
+      }
+
+      const updatedScores = await scoreService.getAll({ subject_id: subjectId, term, academic_year: academicYear });
+      setExistingScores(updatedScores);
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
