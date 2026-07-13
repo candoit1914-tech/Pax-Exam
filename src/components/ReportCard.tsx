@@ -68,12 +68,26 @@ export const ReportCard = ({
           {/* Header */}
           <div className="flex flex-col mb-3 pb-3 border-b-4 border-[#cbd5e1]">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
-              <div className="flex flex-col items-start min-w-0">
-                <div className="flex items-start gap-4 w-full">
-                  <div className="flex flex-col">
-                    <h1 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
-                    {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
-                    {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
+              <div className="flex items-start gap-4 sm:gap-6 flex-1 min-w-0">
+                {schoolProfile.logo ? (
+                  <img src={schoolProfile.logo} className="w-20 h-20 object-contain rounded-lg border border-[#e2e8f0] shrink-0" alt="School Logo" />
+                ) : (
+                  <div className="w-20 h-20 bg-[#f8fafc] rounded-lg flex items-center justify-center text-[#94a3b8] font-bold border border-[#e2e8f0] shrink-0 text-center leading-tight p-1">
+                    <div className="uppercase tracking-widest text-[7px] font-black text-[#0f172a]">{schoolProfile.name}</div>
+                    {schoolProfile.address && <div className="text-[6px] text-[#475569] font-semibold mt-0.5 leading-tight">{schoolProfile.address}</div>}
+                    {schoolProfile.location && <div className="text-[6px] text-[#475569] font-medium leading-tight">{schoolProfile.location}</div>}
+                  </div>
+                )}
+                <div className="flex flex-col items-start min-w-0">
+                  <div className="flex items-start gap-4 w-full">
+                    <div className="flex flex-col">
+                      <h1 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
+                      {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
+                      {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
+                    </div>
+                    {student?.photo && (
+                      <img src={student.photo} className="w-20 h-20 rounded-md object-cover border border-[#cbd5e1] shrink-0 sm:hidden" alt="Student Thumbnail" />
+                    )}
                   </div>
                 </div>
               </div>
