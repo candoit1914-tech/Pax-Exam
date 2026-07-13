@@ -44,7 +44,7 @@ export const CertificateBuilder = ({ student, schoolProfile, myClass, myRanking,
         )}
         
         <h1 className="text-3xl font-black uppercase tracking-widest text-slate-900 mb-2">{schoolProfile.name}</h1>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">{schoolProfile.address || schoolProfile.location}</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-8">{schoolProfile.address}{schoolProfile.address && schoolProfile.location ? ' | ' : ''}{schoolProfile.location}</p>
 
         <h2 className="text-5xl font-black text-amber-600 mb-6" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
           {isGraduating ? 'Certificate of Completion' : 'Certificate of Excellence'}

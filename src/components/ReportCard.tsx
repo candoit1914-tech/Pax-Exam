@@ -52,7 +52,7 @@ export const ReportCard = ({
               <div key={i} className="flex whitespace-nowrap text-[#0f172a] font-black text-2xl" style={{ transform: `rotate(-20deg) translateY(${i * 100 - 800}px) translateX(-200px)`, letterSpacing: '6px' }}>
                 {Array.from({ length: 12 }).map((_, j) => (
                     <span key={j} style={{ display: 'inline-block', transform: `translateY(${Math.sin(j) * 25}px)`, marginRight: '60px' }}>
-                      {schoolProfile.name || 'OCE jhs'}
+                      {schoolProfile.name}
                     </span>
                 ))}
               </div>
@@ -81,7 +81,7 @@ export const ReportCard = ({
                 <div className="flex flex-col items-start min-w-0">
                   <div className="flex items-start gap-4 w-full">
                     <div className="flex flex-col">
-                      <h1 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
+                      <h1 className="text-base sm:text-lg font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
                       {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
                       {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
                     </div>
@@ -197,7 +197,7 @@ export const ReportCard = ({
           </div>
           
           <div className="border-t border-[#e2e8f0] pt-2 mt-auto text-[10px] text-[#94a3b8] text-center font-medium lowercase">
-              <span className="capitalize">Contact</span> the school for more information via {schoolProfile.phone || '0246856855'} or {schoolProfile.email || 'akofi91@yahoo.com'}
+              <span className="capitalize">Contact</span> the school for more information via {schoolProfile.phone} or {schoolProfile.email}
           </div>
         </div>
       </div>

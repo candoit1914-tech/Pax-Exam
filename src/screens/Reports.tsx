@@ -50,7 +50,7 @@ export const ReportsScreen = () => {
   const [docType, setDocType] = useState<'report' | 'transcript' | 'certificate'>('report');
   const [isGenerating, setIsGenerating] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
-  const [schoolProfile, setSchoolProfile] = useState({ name: 'Ok20', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
+  const [schoolProfile, setSchoolProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
 
   const [studentsRaw, setStudentsRaw] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
