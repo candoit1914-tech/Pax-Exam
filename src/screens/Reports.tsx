@@ -87,7 +87,7 @@ export const ReportsScreen = () => {
         if (reportMode === 'averages' || reportMode === 'subject-averages') {
           params.academic_year = academicYear;
           if (classId) {
-            const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === String(classId));
+            const studentsInClass = studentsRaw.filter((s: any) => Number(s.class_id) === Number(classId));
             if (studentsInClass.length > 0) {
               params.student_id = studentsInClass.map((s: any) => s.id).join(',');
             }
@@ -99,7 +99,7 @@ export const ReportsScreen = () => {
             params.academic_year = academicYear;
           }
         } else if (reportMode === 'bulk' && classId) {
-          const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === String(classId));
+          const studentsInClass = studentsRaw.filter((s: any) => Number(s.class_id) === Number(classId));
           if (studentsInClass.length > 0) {
             params.student_id = studentsInClass.map((s: any) => s.id).join(',');
           }
@@ -232,7 +232,7 @@ export const ReportsScreen = () => {
     const s = students.find((x: any) => String(x.id) === studentId);
     if (s) targetStudents = [s];
   } else if ((reportMode === 'bulk' || reportMode === 'averages' || reportMode === 'subject-averages') && classId) {
-    targetStudents = students.filter((x: any) => String(x.class_id) === String(classId));
+    targetStudents = students.filter((x: any) => Number(x.class_id) === Number(classId));
   }
 
   const classScoresForRanking = allScores.filter((sc: any) =>
@@ -260,7 +260,7 @@ export const ReportsScreen = () => {
       const pos = isCurrentTerm ? subjectRankings.get(sc.subject_id)?.get(student.id!) || null : null;
       return { ...sc, subjectName: getSubjectName(sc.subject_id), subjectPosition: pos };
     });
-    const classAverages = students.filter((s: any) => s.class_id === student.class_id).map((s: any) => {
+    const classAverages = students.filter((s: any) => Number(s.class_id) === Number(student.class_id)).map((s: any) => {
       const sScores = allScores.filter((sc: any) => sc.student_id === s.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
       const avg = calculateAverage(sScores);
       const examTotal = sScores.reduce((sum: number, curr: any) => sum + (Number(curr.exam_score) || 0), 0) * 2;
