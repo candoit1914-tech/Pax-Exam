@@ -26,6 +26,8 @@ router.post('/generate-code', authenticate, authorize('super_admin', 'school_adm
 router.get('/report/:code', async (req, res, next) => {
   try {
     const { code } = req.params;
+    const { term, academic_year } = req.query;
+
     const ac = await pool.query(
       `SELECT ac.*, s.name AS student_name, s.class_id, c.name AS class_name,
               s.gender, s.dob, s.admission_year, s.status, s.photo, s.parent_name, s.parent_phone
@@ -40,21 +42,12 @@ router.get('/report/:code', async (req, res, next) => {
     }
 
     const entry = ac.rows[0];
-    console.log('Portal access:', { student_id: entry.student_id, school_id: entry.school_id, purpose: entry.purpose });
 
     // Get all subjects registered for this student's school
     const allSubjects = await pool.query(
       `SELECT id, name FROM subjects WHERE school_id = $1 ORDER BY name`,
       [entry.school_id]
     );
-    console.log('All subjects count:', allSubjects.rows.length);
-
-    // Check if student has ANY scores at all
-    const anyScores = await pool.query(
-      `SELECT COUNT(*) as count FROM scores WHERE student_id = $1`,
-      [entry.student_id]
-    );
-    console.log('Student total scores:', anyScores.rows[0].count);
 
     let scores;
     if (entry.purpose === 'transcript') {
@@ -65,8 +58,17 @@ router.get('/report/:code', async (req, res, next) => {
          ORDER BY sc.academic_year DESC, sc.term, sub.name`,
         [entry.student_id]
       );
+    } else if (term && academic_year) {
+      // Filter by specific term and academic_year
+      scores = await pool.query(
+        `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+         FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+         WHERE sc.student_id = $1 AND sc.term = $2 AND sc.academic_year = $3
+         ORDER BY sub.name`,
+        [entry.student_id, term, academic_year]
+      );
     } else {
-      // First try to get the latest term/year combination
+      // Default: get latest term/year
       const latestResult = await pool.query(
         `SELECT term, academic_year FROM scores
          WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
@@ -76,7 +78,6 @@ router.get('/report/:code', async (req, res, next) => {
         [entry.student_id]
       );
       const latest = latestResult.rows[0];
-      console.log('Latest scores found:', latest);
 
       if (latest) {
         scores = await pool.query(
@@ -86,7 +87,6 @@ router.get('/report/:code', async (req, res, next) => {
            ORDER BY sub.name`,
           [entry.student_id, latest.term, latest.academic_year]
         );
-        console.log('Scores for latest term:', scores.rows.length);
       } else {
         // No scores with term/year - get ALL scores for this student
         scores = await pool.query(
@@ -96,7 +96,6 @@ router.get('/report/:code', async (req, res, next) => {
            ORDER BY sub.name`,
           [entry.student_id]
         );
-        console.log('All student scores (no term filter):', scores.rows.length);
       }
     }
 
@@ -112,7 +111,14 @@ router.get('/report/:code', async (req, res, next) => {
           grade: '-'
         }));
 
-    console.log('Final scores count:', finalScores.length);
+    // Get available terms/years for this student
+    const availableTerms = await pool.query(
+      `SELECT DISTINCT term, academic_year FROM scores
+       WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
+       ORDER BY academic_year DESC,
+         CASE term WHEN 'Term 3' THEN 3 WHEN 'Term 2' THEN 2 ELSE 1 END DESC`,
+      [entry.student_id]
+    );
 
     const school = await pool.query(
       'SELECT name, address, location, phone, email FROM schools WHERE id = $1',
@@ -138,7 +144,8 @@ router.get('/report/:code', async (req, res, next) => {
         school_phone: sch.phone || '',
         school_email: sch.email || ''
       },
-      scores: finalScores
+      scores: finalScores,
+      availableTerms: availableTerms.rows
     });
   } catch (err) {
     console.error('Portal report error:', err);

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
-import { KeyRound, Download, ArrowLeft, User, Calendar, GraduationCap, Users, Hash } from 'lucide-react';
+import { GlassCard, GlassInput, GlassButton, GlassSelect } from '../components/ui/Glass';
+import { KeyRound, Download, ArrowLeft, User, Calendar, GraduationCap, Users, Hash, Filter } from 'lucide-react';
 import { portalService } from '../services/portalService';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
@@ -13,7 +13,24 @@ export const StudentPortalScreen = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const reportRef = useRef<HTMLDivElement>(null);
+
+  const fetchReport = async (term?: string, academicYear?: string) => {
+    if (!code.trim()) return;
+    try {
+      const data = await portalService.getReportByCode(code.trim().toUpperCase(), term, academicYear);
+      setReport(data);
+      if (data.availableTerms?.length > 0 && !term && !academicYear) {
+        const latest = data.availableTerms[0];
+        setSelectedTerm(latest.term);
+        setSelectedYear(latest.academic_year);
+      }
+    } catch {
+      setError('Invalid or expired code. Contact the school for a new one.');
+    }
+  };
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,12 +39,17 @@ export const StudentPortalScreen = () => {
     setError('');
     setReport(null);
     try {
-      const data = await portalService.getReportByCode(code.trim().toUpperCase());
-      setReport(data);
-    } catch {
-      setError('Invalid or expired code. Contact the school for a new one.');
+      await fetchReport();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTermChange = async (term: string, year: string) => {
+    setSelectedTerm(term);
+    setSelectedYear(year);
+    if (code.trim()) {
+      await fetchReport(term, year);
     }
   };
 
@@ -35,7 +57,8 @@ export const StudentPortalScreen = () => {
     if (!reportRef.current) return;
     setIsGenerating(true);
     const studentName = (report?.student?.name || 'Student').replace(/\s+/g, '_');
-    const filename = `${studentName}_Report_Card.pdf`;
+    const termSuffix = selectedTerm ? `_${selectedTerm.replace(/\s+/g, '')}_${selectedYear.replace('/', '-')}` : '';
+    const filename = `${studentName}_Report_Card${termSuffix}.pdf`;
     const opt: any = {
       margin: 10, filename,
       image: { type: 'jpeg', quality: 0.98 },
@@ -78,6 +101,29 @@ export const StudentPortalScreen = () => {
           </div>
           <GlassButton sizing="sm" onClick={() => setReport(null)}><ArrowLeft size={14} /> Back</GlassButton>
         </div>
+
+        {/* Term/Year Filter */}
+        {report.availableTerms && report.availableTerms.length > 0 && (
+          <div className="flex items-center gap-2 bg-amber-50/60 border border-amber-200 rounded-lg p-2.5">
+            <Filter size={14} className="text-amber-600 shrink-0" />
+            <div className="flex-1 flex gap-2">
+              <select
+                value={`${selectedTerm}|||${selectedYear}`}
+                onChange={(e) => {
+                  const [t, y] = e.target.value.split('|||');
+                  handleTermChange(t, y);
+                }}
+                className="flex-1 bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+              >
+                {report.availableTerms.map((t: any, i: number) => (
+                  <option key={i} value={`${t.term}|||${t.academic_year}`}>
+                    {t.term} - {t.academic_year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Student Info Grid */}
         <div className="grid grid-cols-2 gap-3 text-xs">
