@@ -6,7 +6,6 @@ import { portalService } from '../services/portalService';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
 
 export const StudentPortalScreen = () => {
   const [code, setCode] = useState('');
@@ -48,8 +47,8 @@ export const StudentPortalScreen = () => {
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        const writeResult = await Filesystem.writeFile({ path: filename, data: base64Data, directory: Directory.Documents });
-        await Share.share({ title: filename, text: 'Report Card', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
+        await Filesystem.writeFile({ path: filename, data: base64Data, directory: Directory.Documents });
+        alert(`Report card saved to Documents: ${filename}`);
       } else {
         await html2pdf().set(opt).from(reportRef.current).save();
       }
@@ -62,40 +61,65 @@ export const StudentPortalScreen = () => {
 
   const reportContent = report ? (
     <div className="space-y-4">
-      <GlassCard className="p-4 space-y-3">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {report.student?.photo ? (
-              <img src={report.student.photo} alt={report.student.name} className="w-14 h-14 rounded-xl object-cover border-2 border-blue-300 shadow-sm" />
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-sm">
-                <User size={24} />
-              </div>
-            )}
-            <div>
-              <h2 className="font-bold text-slate-800 text-base">{report.student.name}</h2>
-              <p className="text-xs text-slate-500">Class: {report.student.class}</p>
-              {report.student.gender && <p className="text-[10px] text-slate-400 capitalize">{report.student.gender}</p>}
+      <GlassCard className="p-4 space-y-4">
+        {/* Student Profile Header */}
+        <div className="flex items-center gap-4 pb-3 border-b border-white/40">
+          {report.student?.photo ? (
+            <img src={report.student.photo} alt={report.student.name} className="w-20 h-20 rounded-xl object-cover border-2 border-blue-300 shadow-md" />
+          ) : (
+            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-md">
+              <User size={32} />
             </div>
+          )}
+          <div className="flex-1">
+            <h2 className="font-bold text-slate-800 text-lg">{report.student.name}</h2>
+            <p className="text-sm text-blue-600 font-semibold">{report.student.class}</p>
+            {report.student.gender && <p className="text-xs text-slate-500 capitalize">{report.student.gender}</p>}
           </div>
           <GlassButton sizing="sm" onClick={() => setReport(null)}><ArrowLeft size={14} /> Back</GlassButton>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-[10px] bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+        {/* Student Info Grid */}
+        <div className="grid grid-cols-2 gap-3 text-xs">
           {report.student.parent_name && (
-            <div className="flex items-center gap-1.5"><Users size={12} className="text-blue-500" /><span className="text-slate-500">Parent:</span> <span className="font-semibold text-slate-700">{report.student.parent_name}</span></div>
+            <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+              <Users size={14} className="text-blue-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">Parent</p>
+                <p className="font-semibold text-slate-700">{report.student.parent_name}</p>
+              </div>
+            </div>
           )}
           {report.student.dob && (
-            <div className="flex items-center gap-1.5"><Calendar size={12} className="text-blue-500" /><span className="text-slate-500">DOB:</span> <span className="font-semibold text-slate-700">{new Date(report.student.dob).toLocaleDateString()}</span></div>
+            <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+              <Calendar size={14} className="text-blue-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">Date of Birth</p>
+                <p className="font-semibold text-slate-700">{new Date(report.student.dob).toLocaleDateString()}</p>
+              </div>
+            </div>
           )}
           {report.student.admission_year && (
-            <div className="flex items-center gap-1.5"><Hash size={12} className="text-blue-500" /><span className="text-slate-500">Admitted:</span> <span className="font-semibold text-slate-700">{report.student.admission_year}</span></div>
+            <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+              <Hash size={14} className="text-blue-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">Admission Year</p>
+                <p className="font-semibold text-slate-700">{report.student.admission_year}</p>
+              </div>
+            </div>
           )}
           {report.student.school_name && (
-            <div className="flex items-center gap-1.5"><GraduationCap size={12} className="text-blue-500" /><span className="text-slate-500">School:</span> <span className="font-semibold text-slate-700">{report.student.school_name}</span></div>
+            <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+              <GraduationCap size={14} className="text-blue-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">School</p>
+                <p className="font-semibold text-slate-700">{report.student.school_name}</p>
+              </div>
+            </div>
           )}
         </div>
 
+        {/* Academic Summary */}
         {report.scores.length > 0 && (
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-white/60 border border-white/80 rounded-lg p-2">
@@ -113,6 +137,7 @@ export const StudentPortalScreen = () => {
           </div>
         )}
 
+        {/* Scores List */}
         <div className="border-t border-white/40 pt-3 space-y-1">
           {report.scores.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-4">No scores found.</p>
@@ -131,11 +156,11 @@ export const StudentPortalScreen = () => {
           )}
         </div>
       </GlassCard>
-      <div className="flex gap-2">
-        <GlassButton onClick={() => generatePDF()} disabled={isGenerating} sizing="sm" className="flex-1">
-          <Download size={16} /> {isGenerating ? 'Generating...' : 'Download Report Card'}
-        </GlassButton>
-      </div>
+
+      {/* Download Button Only */}
+      <GlassButton onClick={() => generatePDF()} disabled={isGenerating} sizing="sm" className="w-full">
+        <Download size={16} /> {isGenerating ? 'Generating...' : 'Download Report Card'}
+      </GlassButton>
     </div>
   ) : null;
 
