@@ -28,7 +28,7 @@ router.get('/report/:code', async (req, res, next) => {
     const { code } = req.params;
     const ac = await pool.query(
       `SELECT ac.*, s.name AS student_name, s.class_id, c.name AS class_name,
-              s.gender, s.dob, s.admission_year, s.status, s.photo, s.parent_name
+              s.gender, s.dob, s.admission_year, s.status, s.photo, s.parent_name, s.parent_phone
        FROM access_codes ac
        JOIN students s ON s.id = ac.student_id
        JOIN classes c ON c.id = s.class_id
@@ -40,15 +40,43 @@ router.get('/report/:code', async (req, res, next) => {
     }
 
     const entry = ac.rows[0];
-    const scores = await pool.query(
-      `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
-       FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
-       WHERE sc.student_id = $1 AND sc.term = $2 AND sc.academic_year = $3
-       ORDER BY sub.name`,
-      [entry.student_id, entry.purpose === 'transcript' ? null : 'Term 1', '2025']
-    );
+    let scores;
+    if (entry.purpose === 'transcript') {
+      scores = await pool.query(
+        `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade, sc.term, sc.academic_year
+         FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+         WHERE sc.student_id = $1
+         ORDER BY sc.academic_year DESC, sc.term, sub.name`,
+        [entry.student_id]
+      );
+    } else {
+      const latestResult = await pool.query(
+        `SELECT term, academic_year FROM scores
+         WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
+         ORDER BY academic_year DESC,
+           CASE term WHEN 'Term 3' THEN 3 WHEN 'Term 2' THEN 2 ELSE 1 END DESC
+         LIMIT 1`,
+        [entry.student_id]
+      );
+      const latest = latestResult.rows[0];
+      if (latest) {
+        scores = await pool.query(
+          `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+           FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+           WHERE sc.student_id = $1 AND sc.term = $2 AND sc.academic_year = $3
+           ORDER BY sub.name`,
+          [entry.student_id, latest.term, latest.academic_year]
+        );
+      } else {
+        scores = { rows: [] };
+      }
+    }
 
-    const school = await pool.query('SELECT name FROM schools WHERE id = $1', [entry.school_id]);
+    const school = await pool.query(
+      'SELECT name, address, location, phone, email FROM schools WHERE id = $1',
+      [entry.school_id]
+    );
+    const sch = school.rows[0] || {};
 
     res.json({
       student: {
@@ -61,7 +89,12 @@ router.get('/report/:code', async (req, res, next) => {
         status: entry.status,
         photo: entry.photo,
         parent_name: entry.parent_name,
-        school_name: school.rows[0]?.name || ''
+        parent_phone: entry.parent_phone,
+        school_name: sch.name || '',
+        school_address: sch.address || '',
+        school_location: sch.location || '',
+        school_phone: sch.phone || '',
+        school_email: sch.email || ''
       },
       scores: scores.rows
     });

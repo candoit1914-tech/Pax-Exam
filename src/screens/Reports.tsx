@@ -84,16 +84,23 @@ export const ReportsScreen = () => {
     const fetchScores = async () => {
       try {
         const params: any = {};
-        if (docType === 'report') {
+        if (reportMode === 'averages' || reportMode === 'subject-averages') {
+          params.academic_year = academicYear;
+          if (classId) {
+            const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === String(classId));
+            if (studentsInClass.length > 0) {
+              params.student_id = studentsInClass.map((s: any) => s.id).join(',');
+            }
+          }
+        } else if (docType === 'report') {
           params.term = reportTerm;
           params.academic_year = academicYear;
         } else if (reportMode === 'individual' && studentId) {
           params.student_id = studentId;
         } else if (classId) {
-          const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === classId);
+          const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === String(classId));
           if (studentsInClass.length > 0) {
-            const ids = studentsInClass.map((s: any) => s.id);
-            params.student_id = ids.join(',');
+            params.student_id = studentsInClass.map((s: any) => s.id).join(',');
           }
         }
         const data = await scoreService.getAll(params);
@@ -132,15 +139,16 @@ export const ReportsScreen = () => {
   const generatePerformanceTablePDF = async () => {
     if (!performanceTableRef.current || !classId) return;
     setIsGenerating(true);
-    const cls = classes.find((c: any) => String(c.id) === classId);
+    const cls = classes.find((c: any) => String(c.id) === String(classId));
     const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
     const finalName = `Performance_Table_${className}_${academicYear.replace('/', '-')}.pdf`;
     const opt: any = {
       margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
     try {
+      await new Promise(r => setTimeout(r, 300));
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(performanceTableRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
@@ -149,22 +157,23 @@ export const ReportsScreen = () => {
       } else {
         await html2pdf().set(opt).from(performanceTableRef.current).save();
       }
-    } catch (err) { console.error(err); alert("Could not generate PDF"); }
+    } catch (err) { console.error('Performance Table PDF error:', err); alert("Could not generate PDF. Please try again."); }
     finally { setIsGenerating(false); }
   };
 
   const generateClassChartPDF = async () => {
     if (!classChartRef.current || !classId) return;
     setIsGenerating(true);
-    const cls = classes.find((c: any) => String(c.id) === classId);
+    const cls = classes.find((c: any) => String(c.id) === String(classId));
     const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
     const finalName = `Subject_Averages_${className}_${reportTerm.replace(/\s+/g, '')}.pdf`;
     const opt: any = {
       margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
     try {
+      await new Promise(r => setTimeout(r, 300));
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(classChartRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
@@ -173,7 +182,7 @@ export const ReportsScreen = () => {
       } else {
         await html2pdf().set(opt).from(classChartRef.current).save();
       }
-    } catch (err) { console.error(err); alert("Could not generate PDF"); }
+    } catch (err) { console.error('Class Chart PDF error:', err); alert("Could not generate PDF. Please try again."); }
     finally { setIsGenerating(false); }
   };
 
@@ -218,11 +227,11 @@ export const ReportsScreen = () => {
     const s = students.find((x: any) => String(x.id) === studentId);
     if (s) targetStudents = [s];
   } else if ((reportMode === 'bulk' || reportMode === 'averages' || reportMode === 'subject-averages') && classId) {
-    targetStudents = students.filter((x: any) => String(x.class_id) === classId);
+    targetStudents = students.filter((x: any) => String(x.class_id) === String(classId));
   }
 
   const classScoresForRanking = allScores.filter((sc: any) =>
-    (sc.term || 'Term 1') === reportTerm && (sc.academic_year || '2023/2024') === academicYear && targetStudents.some((s: any) => s.id === sc.student_id)
+    (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear) && targetStudents.some((s: any) => s.id === sc.student_id)
   );
 
   const subjectRankings = new Map<number, Map<number, number>>();
@@ -242,12 +251,12 @@ export const ReportsScreen = () => {
 
   const renderData = targetStudents.map((student: any) => {
     const studentScores = allScores.filter((sc: any) => sc.student_id === student.id).map((sc: any) => {
-      const isCurrentTerm = (sc.term || 'Term 1') === reportTerm && (sc.academic_year || '2023/2024') === academicYear;
+      const isCurrentTerm = (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear);
       const pos = isCurrentTerm ? subjectRankings.get(sc.subject_id)?.get(student.id!) || null : null;
       return { ...sc, subjectName: getSubjectName(sc.subject_id), subjectPosition: pos };
     });
     const classAverages = students.filter((s: any) => s.class_id === student.class_id).map((s: any) => {
-      const sScores = allScores.filter((sc: any) => sc.student_id === s.id && (sc.term || 'Term 1') === reportTerm && (sc.academic_year || '2023/2024') === academicYear);
+      const sScores = allScores.filter((sc: any) => sc.student_id === s.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
       const avg = calculateAverage(sScores);
       const examTotal = sScores.reduce((sum: number, curr: any) => sum + (Number(curr.exam_score) || 0), 0) * 2;
       return { id: s.id!, name: s.name, average: avg, rankScore: examTotal };
@@ -417,9 +426,9 @@ export const ReportsScreen = () => {
                   </thead>
                   <tbody>
                     {targetStudents.map((student: any) => {
-                      const scoresT1 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 1' && s.academic_year === academicYear);
-                      const scoresT2 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 2' && s.academic_year === academicYear);
-                      const scoresT3 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 3' && s.academic_year === academicYear);
+                      const scoresT1 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 1' && String(s.academic_year) === String(academicYear));
+                      const scoresT2 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 2' && String(s.academic_year) === String(academicYear));
+                      const scoresT3 = allScores.filter((s: any) => s.student_id === student.id && s.term === 'Term 3' && String(s.academic_year) === String(academicYear));
                       const getAvg = (arr: any[]) => arr.length > 0 ? calculateAverage(arr) : null;
                       const t1 = getAvg(scoresT1), t2 = getAvg(scoresT2), t3 = getAvg(scoresT3);
                       const validAvgs = [t1, t2, t3].filter(a => a !== null) as number[];
