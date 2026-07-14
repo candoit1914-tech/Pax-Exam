@@ -493,66 +493,63 @@ export const ReportsScreen = () => {
                 <h3 className="text-center font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider">
                   Class Raw Scores - {classes.find((c: any) => String(c.id) === classId)?.name || ''} ({reportTerm} {academicYear})
                 </h3>
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider border-y border-slate-200">
-                      <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-0 bg-slate-100">Pos</th>
-                      <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-8 bg-slate-100">Student Name</th>
-                      {subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id))).map((sub: any) => (
-                        <th key={sub.id} className="py-2 px-2 font-bold text-center border-r border-slate-200" colSpan={3}>
-                          {sub.name}
-                        </th>
-                      ))}
-                      <th className="py-2 px-2 font-black text-center border-r border-slate-200 bg-indigo-50">Total</th>
-                    </tr>
-                    <tr className="bg-slate-50 text-slate-600 text-[10px] border-b border-slate-200">
-                      <th className="py-1 px-2 border-r border-slate-200 sticky left-0 bg-slate-50"></th>
-                      <th className="py-1 px-2 border-r border-slate-200 sticky left-8 bg-slate-50"></th>
-                      {subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id))).map((sub: any) => (
-                        <React.Fragment key={sub.id}>
-                          <th className="py-1 px-1 text-center border-r border-slate-200 font-semibold">C/A</th>
-                          <th className="py-1 px-1 text-center border-r border-slate-200 font-semibold">Exam</th>
-                          <th className="py-1 px-1 text-center border-r border-slate-200 font-bold">Tot</th>
-                        </React.Fragment>
-                      ))}
-                      <th className="py-1 px-2 text-center border-r border-slate-200 font-black bg-indigo-50"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const activeSubjects = subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id)));
-                      const studentTotals = targetStudents.map((student: any) => {
-                        const studentScoresForTerm = allScores.filter((sc: any) => sc.student_id === student.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
-                        const total = studentScoresForTerm.reduce((sum: number, sc: any) => sum + (Number(sc.total) || 0), 0);
-                        return { ...student, total };
-                      }).sort((a: any, b: any) => b.total - a.total);
-                      let rank = 1;
-                      let prevTotal: number | null = null;
-                      const ranked = studentTotals.map((s: any, i: number) => {
-                        if (prevTotal !== null && s.total < prevTotal) rank = i + 1;
-                        prevTotal = s.total;
-                        return { ...s, position: rank };
-                      });
-                      return ranked.map((student: any) => (
-                        <tr key={student.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                          <td className="py-2 px-2 font-bold text-center border-r border-slate-200 sticky left-0 bg-white">{student.position}</td>
-                          <td className="py-2 px-2 font-bold text-slate-800 border-r border-slate-200 sticky left-8 bg-white whitespace-nowrap">{student.name}</td>
-                          {activeSubjects.map((sub: any) => {
-                            const score = allScores.find((sc: any) => sc.student_id === student.id && sc.subject_id === sub.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
-                            return (
-                              <React.Fragment key={sub.id}>
-                                <td className="py-2 px-1 text-center border-r border-slate-100">{score?.class_score ?? '-'}</td>
-                                <td className="py-2 px-1 text-center border-r border-slate-100">{score?.exam_score ?? '-'}</td>
-                                <td className="py-2 px-1 text-center font-bold border-r border-slate-200">{score?.total ?? '-'}</td>
-                              </React.Fragment>
-                            );
-                          })}
-                          <td className="py-2 px-2 text-center font-black text-indigo-700 bg-indigo-50/50">{student.total}</td>
+                {(() => {
+                  const activeSubjects = subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id)));
+                  const getOrdinalNum = (n: number) => { const s = ["th", "st", "nd", "rd"]; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+                  const termScores = (studentId: number, subjectId: number) => allScores.find((sc: any) => sc.student_id === studentId && sc.subject_id === subjectId && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
+                  const subjectPositions = new Map<number, Map<number, number>>();
+                  activeSubjects.forEach((sub: any) => {
+                    const scores = targetStudents.map((st: any) => { const sc = termScores(st.id, sub.id); return { id: st.id, exam2: sc ? (Number(sc.exam_score) || 0) * 2 : 0 }; }).sort((a: any, b: any) => b.exam2 - a.exam2);
+                    const posMap = new Map<number, number>(); let rank = 1; let prev = -1;
+                    scores.forEach((s: any, i: number) => { if (s.exam2 < prev) rank = i + 1; prev = s.exam2; posMap.set(s.id, rank); });
+                    subjectPositions.set(sub.id, posMap);
+                  });
+                  const studentRows = targetStudents.map((student: any) => {
+                    const total = activeSubjects.reduce((sum: number, sub: any) => { const sc = termScores(student.id, sub.id); return sum + (sc ? (Number(sc.exam_score) || 0) * 2 : 0); }, 0);
+                    return { ...student, total };
+                  }).sort((a: any, b: any) => b.total - a.total);
+                  let rank = 1; let prevTotal: number | null = null;
+                  const ranked = studentRows.map((s: any, i: number) => { if (prevTotal !== null && s.total < prevTotal) rank = i + 1; prevTotal = s.total; return { ...s, classPos: rank }; });
+                  return (
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider border-y border-slate-200">
+                          <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-0 bg-slate-100 z-10">Pos</th>
+                          <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-8 bg-slate-100 z-10">Student Name</th>
+                          {activeSubjects.map((sub: any) => (
+                            <React.Fragment key={sub.id}>
+                              <th className="py-2 px-2 font-bold text-center border-r border-slate-200">{sub.name}</th>
+                              <th className="py-2 px-2 font-bold text-center border-r border-slate-200 text-[10px]">Pos</th>
+                            </React.Fragment>
+                          ))}
+                          <th className="py-2 px-2 font-black text-center border-r border-slate-200 bg-indigo-50">Total</th>
+                          <th className="py-2 px-2 font-black text-center bg-indigo-50">Class Pos</th>
                         </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {ranked.map((student: any) => (
+                          <tr key={student.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="py-2 px-2 font-bold text-center border-r border-slate-200 sticky left-0 bg-white z-10">{student.classPos}</td>
+                            <td className="py-2 px-2 font-bold text-slate-800 border-r border-slate-200 sticky left-8 bg-white z-10 whitespace-nowrap">{student.name}</td>
+                            {activeSubjects.map((sub: any) => {
+                              const sc = termScores(student.id, sub.id);
+                              const exam2 = sc ? (Number(sc.exam_score) || 0) * 2 : null;
+                              const pos = subjectPositions.get(sub.id)?.get(student.id) || null;
+                              return (
+                                <React.Fragment key={sub.id}>
+                                  <td className={`py-2 px-2 text-center border-r border-slate-100 ${exam2 !== null ? 'font-semibold' : 'text-slate-300'}`}>{exam2 !== null ? exam2 : '-'}</td>
+                                  <td className={`py-2 px-2 text-center border-r border-slate-200 text-[10px] ${pos === 1 ? 'font-black text-amber-600' : 'text-slate-500'}`}>{pos ? getOrdinalNum(pos) : '-'}</td>
+                                </React.Fragment>
+                              );
+                            })}
+                            <td className="py-2 px-2 text-center font-black text-indigo-700 border-r border-slate-200 bg-indigo-50/50">{student.total}</td>
+                            <td className="py-2 px-2 text-center font-black text-amber-600 bg-indigo-50/50">{getOrdinalNum(student.classPos)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               </div>
             ) : (
               <div ref={reportRef} className="w-full relative shrink-0 text-left bg-white flex flex-col items-center">
