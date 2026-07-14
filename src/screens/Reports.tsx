@@ -199,8 +199,8 @@ export const ReportsScreen = () => {
     const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
     const finalName = `Raw_Scores_${className}_${reportTerm.replace(/\s+/g, '')}_${academicYear.replace('/', '-')}.pdf`;
     const opt: any = {
-      margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      margin: [8, 8, 8, 8], filename: finalName, image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 1.5, useCORS: true, logging: false, allowTaint: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
     try {
@@ -489,8 +489,8 @@ export const ReportsScreen = () => {
                 <SubjectAveragesChart students={targetStudents} scores={allScores} subjects={subjects} />
               </div>
             ) : reportMode === 'raw-scores' ? (
-              <div ref={rawScoresRef} className="overflow-x-auto w-full bg-white p-4">
-                <h3 className="text-center font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider">
+              <div ref={rawScoresRef} className="overflow-x-auto w-full bg-white p-6">
+                <h3 className="text-center font-bold text-slate-800 text-lg mb-4 uppercase tracking-wider">
                   Class Raw Scores - {classes.find((c: any) => String(c.id) === classId)?.name || ''} ({reportTerm} {academicYear})
                 </h3>
                 {(() => {
@@ -511,39 +511,39 @@ export const ReportsScreen = () => {
                   let rank = 1; let prevTotal: number | null = null;
                   const ranked = studentRows.map((s: any, i: number) => { if (prevTotal !== null && s.total < prevTotal) rank = i + 1; prevTotal = s.total; return { ...s, classPos: rank }; });
                   return (
-                    <table className="w-full text-left border-collapse text-xs">
+                    <table className="w-full border-collapse" style={{ border: '2px solid #1e293b' }}>
                       <thead>
-                        <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider border-y border-slate-200">
-                          <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-0 bg-slate-100 z-10">Pos</th>
-                          <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-8 bg-slate-100 z-10">Student Name</th>
+                        <tr style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
+                          <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '50px' }}>Pos</th>
+                          <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-left" style={{ minWidth: '160px' }}>Student Name</th>
                           {activeSubjects.map((sub: any) => (
                             <React.Fragment key={sub.id}>
-                              <th className="py-2 px-2 font-bold text-center border-r border-slate-200">{sub.name}</th>
-                              <th className="py-2 px-2 font-bold text-center border-r border-slate-200 text-[10px]">Pos</th>
+                              <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '70px' }}>{sub.name}</th>
+                              <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '50px' }}>Pos</th>
                             </React.Fragment>
                           ))}
-                          <th className="py-2 px-2 font-black text-center border-r border-slate-200 bg-indigo-50">Total</th>
-                          <th className="py-2 px-2 font-black text-center bg-indigo-50">Class Pos</th>
+                          <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Total</th>
+                          <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Class Pos</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {ranked.map((student: any) => (
-                          <tr key={student.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="py-2 px-2 font-bold text-center border-r border-slate-200 sticky left-0 bg-white z-10">{student.classPos}</td>
-                            <td className="py-2 px-2 font-bold text-slate-800 border-r border-slate-200 sticky left-8 bg-white z-10 whitespace-nowrap">{student.name}</td>
+                        {ranked.map((student: any, idx: number) => (
+                          <tr key={student.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                            <td className="py-3 px-3 font-bold text-sm border border-slate-300 text-center">{student.classPos}</td>
+                            <td className="py-3 px-3 font-bold text-sm border border-slate-300 text-slate-800 whitespace-nowrap">{student.name}</td>
                             {activeSubjects.map((sub: any) => {
                               const sc = termScores(student.id, sub.id);
                               const exam2 = sc ? (Number(sc.exam_score) || 0) * 2 : null;
                               const pos = subjectPositions.get(sub.id)?.get(student.id) || null;
                               return (
                                 <React.Fragment key={sub.id}>
-                                  <td className={`py-2 px-2 text-center border-r border-slate-100 ${exam2 !== null ? 'font-semibold' : 'text-slate-300'}`}>{exam2 !== null ? exam2 : '-'}</td>
-                                  <td className={`py-2 px-2 text-center border-r border-slate-200 text-[10px] ${pos === 1 ? 'font-black text-amber-600' : 'text-slate-500'}`}>{pos ? getOrdinalNum(pos) : '-'}</td>
+                                  <td className="py-3 px-3 text-center font-semibold text-sm border border-slate-300">{exam2 !== null ? exam2 : '-'}</td>
+                                  <td className={`py-3 px-3 text-center text-xs border border-slate-300 ${pos === 1 ? 'font-black text-amber-600' : 'text-slate-600'}`}>{pos ? getOrdinalNum(pos) : '-'}</td>
                                 </React.Fragment>
                               );
                             })}
-                            <td className="py-2 px-2 text-center font-black text-indigo-700 border-r border-slate-200 bg-indigo-50/50">{student.total}</td>
-                            <td className="py-2 px-2 text-center font-black text-amber-600 bg-indigo-50/50">{getOrdinalNum(student.classPos)}</td>
+                            <td className="py-3 px-3 text-center font-black text-sm border border-slate-300" style={{ backgroundColor: '#eef2ff', color: '#3730a3' }}>{student.total}</td>
+                            <td className="py-3 px-3 text-center font-black text-sm border border-slate-300" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>{getOrdinalNum(student.classPos)}</td>
                           </tr>
                         ))}
                       </tbody>
