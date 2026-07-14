@@ -11,9 +11,7 @@ export const ReportCard = ({
   getSubjectName,
   term = 'Current Term',
   academicYear = 'Current Year',
-  reportTeacher = '',
-  allClassStudents = [],
-  allClassScores = []
+  reportTeacher = ''
 }: any) => {
 
   const displayTeacherName = reportTeacher ? reportTeacher : (myClass?.teacher_name && myClass.teacher_name.toLowerCase() !== 'not assigned' ? myClass.teacher_name : 'Not assigned');
@@ -104,7 +102,7 @@ export const ReportCard = ({
             </div>
             <div className="flex justify-between items-end w-full mt-2">
               <div className="bg-[#1e293b] text-[#ffffff] px-4 py-2 rounded font-black tracking-widest uppercase text-xs inline-block shadow-sm">
-                Academic Report Card
+                Academic Transcript
               </div>
               <div className="text-[10px] text-[#64748b] font-bold uppercase text-right flex gap-4">
                 <p>Term: {term}</p>
@@ -135,7 +133,7 @@ export const ReportCard = ({
               </div>
           </div>
 
-          {/* Scores Table */}
+          {/* Table */}
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse mb-3">
               <thead>
@@ -170,33 +168,6 @@ export const ReportCard = ({
               </tbody>
             </table>
           </div>
-
-          {/* Class Performance Overview Table */}
-          {allClassStudents.length > 0 && allClassScores.length > 0 && (
-            <div className="mb-4 mt-2">
-              <p className="text-[9px] uppercase tracking-widest font-black text-[#94a3b8] mb-2">Class Performance Overview</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[10px]">
-                  <thead>
-                    <tr className="bg-[#1e293b] text-white">
-                      <th className="py-1.5 px-2 font-bold uppercase tracking-wider">Pos</th>
-                      <th className="py-1.5 px-2 font-bold uppercase tracking-wider">Student</th>
-                      <th className="py-1.5 px-2 font-bold uppercase tracking-wider text-center">Avg %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allClassStudents.map((s: any, idx: number) => (
-                      <tr key={s.id} className={`border-b border-[#e2e8f0] ${s.id === student?.id ? 'bg-blue-50 font-bold' : 'hover:bg-[#f8fafc]'}`}>
-                        <td className="py-1 px-2 font-bold">{getOrdinalNum(idx + 1)}</td>
-                        <td className="py-1 px-2 font-semibold">{s.name}</td>
-                        <td className="py-1 px-2 text-center font-bold">{s.average?.toFixed(1) || '0'}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
           {/* Remarks Section */}
           <div className="mb-4 mt-2 px-2 relative z-10">
