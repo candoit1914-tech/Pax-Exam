@@ -11,6 +11,7 @@ export const TeacherManagementScreen = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdCredentials, setCreatedCredentials] = useState<{email: string; password: string} | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -31,7 +32,8 @@ export const TeacherManagementScreen = () => {
     setSuccess('');
     try {
       const result = await authService.createTeacher(name, email);
-      setSuccess(`Teacher created! Password: ${result.credentials.password}`);
+      setSuccess(`Teacher created successfully!`);
+      setCreatedCredentials(result.credentials);
       setName('');
       setEmail('');
       setShowForm(false);
@@ -47,7 +49,8 @@ export const TeacherManagementScreen = () => {
     if (!confirm('Reset this teacher\'s password?')) return;
     try {
       const result = await authService.resetTeacherPassword(id);
-      setSuccess(`Password reset! New password: ${result.credentials.password}`);
+      setSuccess(`Password reset successfully!`);
+      setCreatedCredentials(result.credentials);
       await loadTeachers();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to reset password.');
@@ -64,7 +67,7 @@ export const TeacherManagementScreen = () => {
     <div className="p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-bold text-slate-800">Teacher Accounts</h2>
-        <GlassButton onClick={() => setShowForm(!showForm)} sizing="sm">
+        <GlassButton onClick={() => { setShowForm(!showForm); setCreatedCredentials(null); setSuccess(''); }} sizing="sm">
           {showForm ? <X size={16} /> : <UserPlus size={16} />}
           {showForm ? 'Cancel' : 'Add Teacher'}
         </GlassButton>
@@ -72,12 +75,35 @@ export const TeacherManagementScreen = () => {
 
       {error && <p className="text-red-600 text-xs bg-red-50 p-2 rounded-lg">{error}</p>}
       {success && (
-        <div className="bg-green-50 border border-green-200 p-3 rounded-xl space-y-1">
+        <div className="bg-green-50 border border-green-200 p-3 rounded-xl space-y-2">
           <p className="text-green-700 text-xs font-bold">{success}</p>
-          <GlassButton sizing="sm" onClick={() => copyToClipboard(success.split(': ')[1])}>
-            {copied === success.split(': ')[1] ? <Check size={14} /> : <Copy size={14} />}
-            Copy Password
-          </GlassButton>
+          {createdCredentials && (
+            <div className="bg-white rounded-lg p-3 border border-green-100 space-y-2">
+              <p className="text-xs text-slate-600 font-medium">Login Credentials:</p>
+              <div className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold">Email</p>
+                  <p className="text-sm font-bold text-slate-800">{createdCredentials.email}</p>
+                </div>
+                <GlassButton sizing="sm" variant="secondary" onClick={() => copyToClipboard(createdCredentials.email)}>
+                  {copied === createdCredentials.email ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </GlassButton>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold">Password</p>
+                  <p className="text-sm font-bold text-slate-800 font-mono tracking-wide">{createdCredentials.password}</p>
+                </div>
+                <GlassButton sizing="sm" variant="secondary" onClick={() => copyToClipboard(createdCredentials.password)}>
+                  {copied === createdCredentials.password ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </GlassButton>
+              </div>
+              <GlassButton sizing="sm" onClick={() => copyToClipboard(`Email: ${createdCredentials.email}\nPassword: ${createdCredentials.password}`)}>
+                {copied === `Email: ${createdCredentials.email}\nPassword: ${createdCredentials.password}` ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                Copy Both
+              </GlassButton>
+            </div>
+          )}
         </div>
       )}
 

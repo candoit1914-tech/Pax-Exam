@@ -49,7 +49,7 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
             <div className="w-24 h-24 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400">LOGO</div>
           )}
           <div className="flex-1">
-            <h1 className="text-3xl font-black uppercase text-slate-900 tracking-wider mb-2">{schoolProfile.name}</h1>
+            <h1 className="text-xl font-black uppercase text-slate-900 tracking-wider mb-2">{schoolProfile.name}</h1>
             <p className="text-sm font-semibold text-slate-600">{schoolProfile.address} | {schoolProfile.location}</p>
             <p className="text-sm font-semibold text-slate-600">{schoolProfile.phone} | {schoolProfile.email}</p>
             <div className="inline-block px-4 py-1 bg-slate-800 text-white font-bold tracking-widest text-sm mt-3">OFFICIAL ACADEMIC TRANSCRIPT</div>
@@ -60,23 +60,23 @@ export const TranscriptBuilder = ({ student, allScores, schoolProfile }: any) =>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
           <div className="col-span-2 lg:col-span-1">
             <p className="text-xs font-bold text-slate-500 uppercase">Student Name</p>
-            <p className="font-black text-lg text-slate-900">{student.name}</p>
+            <p className="font-semibold text-base text-slate-900">{student.name}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Gender / Reg No.</p>
-             <p className="font-black text-lg text-slate-900">{student.gender} / {student.id.toString().padStart(4, '0')}</p>
+             <p className="font-semibold text-base text-slate-900">{student.gender} / {student.id.toString().padStart(4, '0')}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Year of Admission</p>
-             <p className="font-black text-lg text-slate-900">{student.admission_year || 'N/A'}</p>
+             <p className="font-semibold text-base text-slate-900">{student.admission_year || 'N/A'}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Status</p>
-             <p className="font-black text-lg text-slate-900">{student.status === 'completed' ? 'Graduated' : 'Active'}</p>
+             <p className="font-semibold text-base text-slate-900">{student.status === 'completed' ? 'Graduated' : 'Active'}</p>
           </div>
           <div>
              <p className="text-xs font-bold text-slate-500 uppercase">Cum. GPA</p>
-             <p className="font-black text-lg text-indigo-700">{allScores && allScores.length > 0 ? (allScores.reduce((acc: number, s: any) => acc + getGradePoint(s.grade), 0) / allScores.length).toFixed(2) : 'N/A'}</p>
+             <p className="font-semibold text-base text-indigo-700">{allScores && allScores.length > 0 ? (allScores.reduce((acc: number, s: any) => acc + getGradePoint(s.grade), 0) / allScores.length).toFixed(2) : 'N/A'}</p>
           </div>
         </div>
 

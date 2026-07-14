@@ -50,6 +50,8 @@ export const ReportsScreen = () => {
   const [docType, setDocType] = useState<'report' | 'transcript' | 'certificate'>('report');
   const [isGenerating, setIsGenerating] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const performanceTableRef = useRef<HTMLDivElement>(null);
+  const classChartRef = useRef<HTMLDivElement>(null);
   const [schoolProfile, setSchoolProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
 
   const [studentsRaw, setStudentsRaw] = useState<any[]>([]);
@@ -122,6 +124,54 @@ export const ReportsScreen = () => {
         alert(`PDF Saved to Documents: ${finalName}`);
       } else {
         await html2pdf().set(opt).from(reportRef.current).save();
+      }
+    } catch (err) { console.error(err); alert("Could not generate PDF"); }
+    finally { setIsGenerating(false); }
+  };
+
+  const generatePerformanceTablePDF = async () => {
+    if (!performanceTableRef.current || !classId) return;
+    setIsGenerating(true);
+    const cls = classes.find((c: any) => String(c.id) === classId);
+    const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
+    const finalName = `Performance_Table_${className}_${academicYear.replace('/', '-')}.pdf`;
+    const opt: any = {
+      margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = await html2pdf().set(opt).from(performanceTableRef.current).outputPdf('datauristring');
+        const base64Data = pdfBase64.split(',')[1];
+        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        alert(`PDF Saved: ${finalName}`);
+      } else {
+        await html2pdf().set(opt).from(performanceTableRef.current).save();
+      }
+    } catch (err) { console.error(err); alert("Could not generate PDF"); }
+    finally { setIsGenerating(false); }
+  };
+
+  const generateClassChartPDF = async () => {
+    if (!classChartRef.current || !classId) return;
+    setIsGenerating(true);
+    const cls = classes.find((c: any) => String(c.id) === classId);
+    const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
+    const finalName = `Subject_Averages_${className}_${reportTerm.replace(/\s+/g, '')}.pdf`;
+    const opt: any = {
+      margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = await html2pdf().set(opt).from(classChartRef.current).outputPdf('datauristring');
+        const base64Data = pdfBase64.split(',')[1];
+        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        alert(`PDF Saved: ${finalName}`);
+      } else {
+        await html2pdf().set(opt).from(classChartRef.current).save();
       }
     } catch (err) { console.error(err); alert("Could not generate PDF"); }
     finally { setIsGenerating(false); }
@@ -323,20 +373,38 @@ export const ReportsScreen = () => {
                   <MessageCircle size={20} />
                 </a>
               )}
-              {(reportMode !== 'averages' && reportMode !== 'subject-averages') && (
+              {reportMode === 'individual' && (
                 <>
                   <GlassButton variant="secondary" onClick={shareReport} className="!p-2"><Share2 size={20} /></GlassButton>
-                  <GlassButton onClick={() => generatePDF(reportMode === 'bulk' ? 'Class_Batch' : targetStudents[0].name)} className="!p-2 !px-4 bg-indigo-600 text-white">
+                  <GlassButton onClick={() => generatePDF(targetStudents[0].name)} className="!p-2 !px-4 bg-indigo-600 text-white">
                     {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download PDF</>}
                   </GlassButton>
                 </>
+              )}
+              {reportMode === 'bulk' && (
+                <GlassButton onClick={() => generatePDF('Class_Batch')} className="!px-4 bg-indigo-600 text-white">
+                  {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download All Report Cards</>}
+                </GlassButton>
+              )}
+              {reportMode === 'averages' && classId && (
+                <GlassButton onClick={generatePerformanceTablePDF} disabled={isGenerating} className="!px-4 bg-indigo-600 text-white">
+                  {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download Performance Table</>}
+                </GlassButton>
+              )}
+              {reportMode === 'subject-averages' && classId && (
+                <GlassButton onClick={generateClassChartPDF} disabled={isGenerating} className="!px-4 bg-indigo-600 text-white">
+                  {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download Chart</>}
+                </GlassButton>
               )}
             </div>
           </div>
 
           <GlassCard className={`p-2 sm:p-4 bg-white text-gray-800 overflow-hidden border border-slate-200 ${reportMode === 'averages' ? '' : 'overflow-x-auto'}`} style={{ borderRadius: '16px' }}>
             {reportMode === 'averages' ? (
-              <div className="overflow-x-auto w-full">
+              <div ref={performanceTableRef} className="overflow-x-auto w-full bg-white p-4">
+                <h3 className="text-center font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider">
+                  Class Performance Table - {classes.find((c: any) => String(c.id) === classId)?.name || ''} ({academicYear})
+                </h3>
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider text-xs border-y border-slate-200">
@@ -370,7 +438,7 @@ export const ReportsScreen = () => {
                 </table>
               </div>
             ) : reportMode === 'subject-averages' ? (
-              <div className="p-4 w-full h-80 flex items-center justify-center">
+              <div ref={classChartRef} className="p-4 w-full h-80 flex items-center justify-center bg-white">
                 <SubjectAveragesChart students={targetStudents} scores={allScores} subjects={subjects} />
               </div>
             ) : (

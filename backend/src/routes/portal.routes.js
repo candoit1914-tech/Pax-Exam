@@ -27,7 +27,8 @@ router.get('/report/:code', async (req, res, next) => {
   try {
     const { code } = req.params;
     const ac = await pool.query(
-      `SELECT ac.*, s.name AS student_name, s.class_id, c.name AS class_name
+      `SELECT ac.*, s.name AS student_name, s.class_id, c.name AS class_name,
+              s.gender, s.dob, s.admission_year, s.status, s.photo, s.parent_name
        FROM access_codes ac
        JOIN students s ON s.id = ac.student_id
        JOIN classes c ON c.id = s.class_id
@@ -47,8 +48,21 @@ router.get('/report/:code', async (req, res, next) => {
       [entry.student_id, entry.purpose === 'transcript' ? null : 'Term 1', '2025']
     );
 
+    const school = await pool.query('SELECT name FROM schools WHERE id = $1', [entry.school_id]);
+
     res.json({
-      student: { id: entry.student_id, name: entry.student_name, class: entry.class_name },
+      student: {
+        id: entry.student_id,
+        name: entry.student_name,
+        class: entry.class_name,
+        gender: entry.gender,
+        dob: entry.dob,
+        admission_year: entry.admission_year,
+        status: entry.status,
+        photo: entry.photo,
+        parent_name: entry.parent_name,
+        school_name: school.rows[0]?.name || ''
+      },
       scores: scores.rows
     });
   } catch (err) {

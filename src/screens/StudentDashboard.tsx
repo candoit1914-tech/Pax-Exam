@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassButton } from '../components/ui/Glass';
-import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, ChevronDown, ChevronUp, Download, Printer, Calendar, Hash, Phone, Contact } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
@@ -68,7 +68,6 @@ export const StudentDashboardScreen = () => {
     navigate('/student-login', { replace: true });
   };
 
-  // Group scores by term and academic year
   const groupedScores = useMemo(() => {
     const groups: Record<string, any[]> = {};
     scores.forEach(score => {
@@ -79,7 +78,6 @@ export const StudentDashboardScreen = () => {
     return groups;
   }, [scores]);
 
-  // Calculate stats
   const stats = useMemo(() => {
     if (scores.length === 0) return { totalScore: 0, average: 0, highest: 0, subjectCount: 0 };
     const totals = scores.map(s => s.total || 0);
@@ -103,21 +101,28 @@ export const StudentDashboardScreen = () => {
 
   const getSubjectName = (id: number) => subjects.find((s: any) => s.id === id)?.name || 'Unknown';
 
-  const handleDownloadReport = async () => {
+  const generatePDF = async (printOnly: boolean = false) => {
     if (!reportRef.current || !user?.student_id) return;
     setIsDownloading(true);
+    const studentName = (user?.name || 'Student').replace(/\s+/g, '_');
+    const filename = `${studentName}_Report_Card.pdf`;
     const opt: any = {
-      margin: 10, filename: `${(user?.name || 'Student').replace(/\s+/g, '_')}_Report_Card.pdf`,
+      margin: 10, filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     try {
-      if (Capacitor.isNativePlatform()) {
+      if (printOnly) {
+        const pdfBlob = await html2pdf().set(opt).from(reportRef.current).output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } else if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        const writeResult = await Filesystem.writeFile({ path: opt.filename, data: base64Data, directory: Directory.Documents });
-        await Share.share({ title: opt.filename, text: 'Download Report Card', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
+        const writeResult = await Filesystem.writeFile({ path: filename, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: filename, text: 'Report Card', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
       } else {
         await html2pdf().set(opt).from(reportRef.current).save();
       }
@@ -138,13 +143,16 @@ export const StudentDashboardScreen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50/80 to-white/40">
-      {/* Header */}
       <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/30 shadow-sm p-4 px-6">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              {user?.name?.charAt(0) || 'S'}
-            </div>
+            {profile?.photo ? (
+              <img src={profile.photo} alt={user?.name} className="w-10 h-10 rounded-full object-cover border-2 border-blue-400 shadow-sm" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                {user?.name?.charAt(0) || 'S'}
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-bold text-slate-900">{user?.name || 'Student'}</h1>
               <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">{user?.class_name || 'Student Portal'}</p>
@@ -156,7 +164,6 @@ export const StudentDashboardScreen = () => {
         </div>
       </div>
 
-      {/* Hidden Report Card for PDF generation */}
       <div className="absolute left-[-9999px] top-0">
         {profile && (
           <div ref={reportRef}>
@@ -175,26 +182,30 @@ export const StudentDashboardScreen = () => {
         )}
       </div>
 
-      {/* Main Content */}
       <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Welcome Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <GlassCard className="p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
-                <GraduationCap size={32} />
-              </div>
+              {profile?.photo ? (
+                <img src={profile.photo} alt={user?.name} className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-300 shadow-lg" />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
+                  <GraduationCap size={32} />
+                </div>
+              )}
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Welcome, {user?.name}!</h2>
                 <p className="text-sm text-slate-600 mt-1">
                   Class: {user?.class_name || 'N/A'} | Student ID: #{user?.student_id}
                 </p>
+                {profile?.gender && (
+                  <p className="text-xs text-slate-500 mt-0.5 capitalize">{profile.gender}</p>
+                )}
               </div>
             </div>
           </GlassCard>
         </motion.div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <GlassCard className="p-4 text-center">
@@ -234,14 +245,18 @@ export const StudentDashboardScreen = () => {
           </motion.div>
         </div>
 
-        {/* Scores Section */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">My Scores</h2>
             {scores.length > 0 && (
-              <GlassButton onClick={handleDownloadReport} disabled={isDownloading} sizing="sm" variant="secondary">
-                <Download size={16} /> {isDownloading ? 'Generating...' : 'Download Report'}
-              </GlassButton>
+              <div className="flex gap-2">
+                <GlassButton onClick={() => generatePDF(true)} disabled={isDownloading} sizing="sm" variant="secondary">
+                  <Printer size={16} /> Print
+                </GlassButton>
+                <GlassButton onClick={() => generatePDF(false)} disabled={isDownloading} sizing="sm">
+                  <Download size={16} /> {isDownloading ? 'Generating...' : 'Download PDF'}
+                </GlassButton>
+              </div>
             )}
           </div>
 
@@ -305,11 +320,24 @@ export const StudentDashboardScreen = () => {
           )}
         </motion.div>
 
-        {/* Profile Info */}
         {profile && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <h2 className="text-lg font-bold text-slate-900 mb-4">My Profile</h2>
             <GlassCard className="p-6">
+              <div className="flex items-start gap-4 mb-4 pb-4 border-b border-slate-200/50">
+                {profile.photo ? (
+                  <img src={profile.photo} alt={profile.name} className="w-20 h-20 rounded-xl object-cover border-2 border-slate-200 shadow-sm" />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-sm">
+                    <User size={32} />
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-slate-900 text-lg">{profile.name}</h3>
+                  <p className="text-sm text-slate-600">{profile.class_name || 'N/A'}</p>
+                  <p className="text-xs text-slate-500 capitalize">{profile.gender || 'N/A'}</p>
+                </div>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</p>
@@ -317,7 +345,7 @@ export const StudentDashboardScreen = () => {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gender</p>
-                  <p className="text-sm font-medium text-slate-800 mt-1">{profile.gender || 'N/A'}</p>
+                  <p className="text-sm font-medium text-slate-800 mt-1 capitalize">{profile.gender || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Class</p>
@@ -335,6 +363,24 @@ export const StudentDashboardScreen = () => {
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</p>
                   <p className="text-sm font-medium text-slate-800 mt-1 capitalize">{profile.status || 'Active'}</p>
                 </div>
+                {profile.parent_name && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Parent/Guardian</p>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{profile.parent_name}</p>
+                  </div>
+                )}
+                {profile.parent_phone && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Parent Phone</p>
+                    <p className="text-sm font-medium text-slate-800 mt-1">{profile.parent_phone}</p>
+                  </div>
+                )}
+                {profile.school_id && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Student ID</p>
+                    <p className="text-sm font-medium text-slate-800 mt-1">#{profile.id}</p>
+                  </div>
+                )}
               </div>
             </GlassCard>
           </motion.div>

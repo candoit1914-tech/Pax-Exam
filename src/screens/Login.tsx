@@ -29,7 +29,7 @@ export const LoginScreen = () => {
     setIsLoading(true);
     setError('');
     try {
-      await login(email, password);
+      await login(email.toLowerCase().trim(), password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid email or password. Please try again.');

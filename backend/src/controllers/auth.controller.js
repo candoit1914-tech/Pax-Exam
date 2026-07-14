@@ -48,6 +48,20 @@ function generateTokens(user) {
   return { accessToken, refreshToken };
 }
 
+function generateSecurePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const upperChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowerChars = 'abcdefghjkmnpqrstuvwxyz';
+  const digitChars = '23456789';
+  let password = '';
+  for (let i = 0; i < 4; i++) password += chars[Math.floor(Math.random() * chars.length)];
+  password += upperChars[Math.floor(Math.random() * upperChars.length)];
+  password += digitChars[Math.floor(Math.random() * digitChars.length)];
+  for (let i = 0; i < 2; i++) password += chars[Math.floor(Math.random() * chars.length)];
+  password += lowerChars[Math.floor(Math.random() * lowerChars.length)];
+  return password;
+}
+
 export const AuthController = {
   async login(req, res, next) {
     try {
@@ -57,6 +71,7 @@ export const AuthController = {
       }
 
       const sanitizedEmail = email.toLowerCase().trim();
+      const sanitizedPassword = password.trim();
 
       if (!checkLoginRateLimit(sanitizedEmail)) {
         return res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
@@ -67,13 +82,13 @@ export const AuthController = {
         return res.status(401).json({ error: 'Invalid email or password.' });
       }
 
-      const isValid = await bcrypt.compare(password, user.password_hash);
-      if (!isValid) {
-        return res.status(401).json({ error: 'Invalid email or password.' });
+      if (!user.is_active) {
+        return res.status(403).json({ error: 'Account is deactivated. Contact your administrator.' });
       }
 
-      if (!user.is_active) {
-        return res.status(403).json({ error: 'Account is deactivated.' });
+      const isValid = await bcrypt.compare(sanitizedPassword, user.password_hash);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid email or password.' });
       }
 
       await UserModel.updateLastLogin(user.id);
@@ -221,7 +236,7 @@ export const AuthController = {
         return res.status(409).json({ error: 'Email already registered.' });
       }
 
-      const password = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const password = generateSecurePassword();
       const passwordHash = await bcrypt.hash(password, 12);
 
       const user = await UserModel.create({
@@ -258,10 +273,11 @@ export const AuthController = {
         return res.status(403).json({ error: 'Forbidden.' });
       }
 
-      const password = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const password = generateSecurePassword();
       const passwordHash = await bcrypt.hash(password, 12);
 
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+      clearLoginAttempts(user.email);
 
       res.json({ message: 'Password reset successfully.', credentials: { email: user.email, password } });
     } catch (err) {
