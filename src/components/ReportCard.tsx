@@ -34,7 +34,8 @@ export const ReportCard = ({
   };
 
   const firstName = student?.name?.split(' ')[0] || 'Student';
-  const autoRemark = generateRemark(firstName, myRanking?.average || 0);
+  const actualAverage = studentScores?.length ? studentScores.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0) / studentScores.length : 0;
+  const autoRemark = generateRemark(firstName, actualAverage);
 
   const sumExamScore = studentScores?.reduce((acc: number, curr: any) => acc + (Number(curr.exam_score) || 0), 0) || 0;
   const totalExamScoreValue = sumExamScore * 2;
@@ -128,7 +129,7 @@ export const ReportCard = ({
               </div>
               <div className="text-right">
                 <p className="text-[9px] uppercase tracking-widest font-bold text-[#94a3b8] mb-1">Overall Performance</p>
-                <p className="text-xl font-black text-[#2563eb]">{myRanking?.average ? myRanking.average.toFixed(2) : '0'}% <span className="text-sm font-bold text-[#64748b] ml-1">(GPA: {gpa.toFixed(2)})</span></p>
+                <p className="text-xl font-black text-[#2563eb]">{actualAverage > 0 ? actualAverage.toFixed(2) : '0'}% <span className="text-sm font-bold text-[#64748b] ml-1">(GPA: {gpa.toFixed(2)})</span></p>
                 <p className="text-xs text-[#475569] font-bold mt-1">Class Pos: {myRanking?.position ? getOrdinalNum(myRanking.position) : '-'} out of {totalInClass}</p>
               </div>
           </div>
