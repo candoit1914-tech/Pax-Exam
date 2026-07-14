@@ -139,26 +139,26 @@ export const ReportCard = ({
             <table className="w-full text-left border-collapse mb-3">
               <thead>
                 <tr className="border-b-2 border-[#1e293b] bg-[#f8fafc]">
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-bold text-[#475569]">Subject</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-bold text-[#475569] text-center border-l border-[#e2e8f0]">Class (50)</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-bold text-[#475569] text-center">Exam (50)</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-black text-[#0f172a] text-center border-l border-[#e2e8f0]">Total</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-bold text-[#475569] text-center border-l border-[#e2e8f0]">Pos</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-black text-[#0f172a] text-center">Grade</th>
-                  <th className="py-2 px-2 text-[10px] uppercase tracking-widest font-bold text-[#475569] border-l border-[#e2e8f0]">Remark</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-bold text-[#475569]">Subject</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-bold text-[#475569] text-center border-l border-[#e2e8f0]">Class (50)</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-bold text-[#475569] text-center">Exam (50)</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-black text-[#0f172a] text-center border-l border-[#e2e8f0]">Total</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-bold text-[#475569] text-center border-l border-[#e2e8f0]">Pos</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-black text-[#0f172a] text-center">Grade</th>
+                  <th className="py-2 px-2 text-[12px] uppercase tracking-widest font-bold text-[#475569] border-l border-[#e2e8f0]">Remark</th>
                 </tr>
               </thead>
               <tbody>
                 {studentScores && studentScores.length > 0 ? (
                   studentScores.map((score: any) => (
                     <tr key={score.id} className="border-b border-[#e2e8f0] hover:bg-[#f8fafc]">
-                        <td className="py-1 px-2 font-bold text-[#1e293b] text-[11px] whitespace-nowrap">{getSubjectName(score.subject_id)}</td>
-                        <td className="py-1 px-2 text-center text-[#475569] font-semibold text-[11px] border-l border-[#f1f5f9]">{score.class_score}</td>
-                        <td className="py-1 px-2 text-center text-[#475569] font-semibold text-[11px]">{score.exam_score}</td>
-                        <td className="py-1 px-2 text-center font-black text-[#2563eb] text-xs border-l border-[#f1f5f9]">{score.total}</td>
-                        <td className="py-1 px-2 text-center text-[#475569] font-bold text-xs border-l border-[#f1f5f9]">{score.subjectPosition ? getOrdinalNum(score.subjectPosition) : '-'}</td>
-                        <td className="py-1 px-2 text-center font-black text-[#0f172a] text-xs">{score.grade}</td>
-                        <td className="py-1 px-2 text-[9px] font-bold text-[#64748b] uppercase tracking-wider border-l border-[#f1f5f9]">{getRemark(score.grade)}</td>
+                        <td className="py-1.5 px-2 font-bold text-[#1e293b] text-[12px] whitespace-nowrap">{getSubjectName(score.subject_id)}</td>
+                        <td className="py-1.5 px-2 text-center text-[#475569] font-semibold text-[12px] border-l border-[#f1f5f9]">{score.class_score}</td>
+                        <td className="py-1.5 px-2 text-center text-[#475569] font-semibold text-[12px]">{score.exam_score}</td>
+                        <td className="py-1.5 px-2 text-center font-black text-[#2563eb] text-[13px] border-l border-[#f1f5f9]">{score.total}</td>
+                        <td className="py-1.5 px-2 text-center text-[#475569] font-bold text-[12px] border-l border-[#f1f5f9]">{score.subjectPosition ? getOrdinalNum(score.subjectPosition) : '-'}</td>
+                        <td className="py-1.5 px-2 text-center font-black text-[#0f172a] text-[13px]">{score.grade}</td>
+                        <td className="py-1.5 px-2 text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-l border-[#f1f5f9]">{getRemark(score.grade)}</td>
                     </tr>
                   ))
                 ) : (
