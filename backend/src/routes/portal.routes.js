@@ -40,6 +40,13 @@ router.get('/report/:code', async (req, res, next) => {
     }
 
     const entry = ac.rows[0];
+
+    // Get all subjects registered for this student's school
+    const allSubjects = await pool.query(
+      `SELECT id, name FROM subjects WHERE school_id = $1 ORDER BY name`,
+      [entry.school_id]
+    );
+
     let scores;
     if (entry.purpose === 'transcript') {
       scores = await pool.query(
@@ -72,6 +79,18 @@ router.get('/report/:code', async (req, res, next) => {
       }
     }
 
+    // If no scores found, return all subjects with zero values
+    const scoresExist = scores.rows.length > 0;
+    const finalScores = scoresExist
+      ? scores.rows
+      : allSubjects.rows.map((sub: any) => ({
+          subject: sub.name,
+          class_score: 0,
+          exam_score: 0,
+          total: 0,
+          grade: '-'
+        }));
+
     const school = await pool.query(
       'SELECT name, address, location, phone, email FROM schools WHERE id = $1',
       [entry.school_id]
@@ -96,7 +115,7 @@ router.get('/report/:code', async (req, res, next) => {
         school_phone: sch.phone || '',
         school_email: sch.email || ''
       },
-      scores: scores.rows
+      scores: finalScores
     });
   } catch (err) {
     next(err);
