@@ -43,7 +43,7 @@ const SubjectAveragesChart = ({ students, scores, subjects }: { students: any[],
 export const ReportsScreen = () => {
   const [studentId, setStudentId] = useState('');
   const [classId, setClassId] = useState('');
-  const [reportMode, setReportMode] = useState<'individual' | 'bulk' | 'averages' | 'subject-averages'>('individual');
+  const [reportMode, setReportMode] = useState<'individual' | 'bulk' | 'averages' | 'subject-averages' | 'raw-scores'>('individual');
   const [reportTerm, setReportTerm] = useState('Term 1');
   const [academicYear, setAcademicYear] = useState('2023/2024');
   const [reportTeacher, setReportTeacher] = useState('');
@@ -51,6 +51,7 @@ export const ReportsScreen = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const performanceTableRef = useRef<HTMLDivElement>(null);
+  const rawScoresRef = useRef<HTMLDivElement>(null);
   const classChartRef = useRef<HTMLDivElement>(null);
   const [schoolProfile, setSchoolProfile] = useState({ name: '', address: '', location: '', phone: '', email: '', logo: '', teacherSignature: '', principalSignature: '' });
 
@@ -84,7 +85,7 @@ export const ReportsScreen = () => {
     const fetchScores = async () => {
       try {
         const params: any = {};
-        if (reportMode === 'averages' || reportMode === 'subject-averages') {
+        if (reportMode === 'averages' || reportMode === 'subject-averages' || reportMode === 'raw-scores') {
           params.academic_year = academicYear;
           if (classId) {
             const studentsInClass = studentsRaw.filter((s: any) => Number(s.class_id) === Number(classId));
@@ -191,6 +192,31 @@ export const ReportsScreen = () => {
     finally { setIsGenerating(false); }
   };
 
+  const generateRawScoresPDF = async () => {
+    if (!rawScoresRef.current || !classId) return;
+    setIsGenerating(true);
+    const cls = classes.find((c: any) => String(c.id) === String(classId));
+    const className = cls?.name?.replace(/\s+/g, '_') || 'Class';
+    const finalName = `Raw_Scores_${className}_${reportTerm.replace(/\s+/g, '')}_${academicYear.replace('/', '-')}.pdf`;
+    const opt: any = {
+      margin: 10, filename: finalName, image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    try {
+      await new Promise(r => setTimeout(r, 300));
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = await html2pdf().set(opt).from(rawScoresRef.current).outputPdf('datauristring');
+        const base64Data = pdfBase64.split(',')[1];
+        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        alert(`PDF Saved: ${finalName}`);
+      } else {
+        await html2pdf().set(opt).from(rawScoresRef.current).save();
+      }
+    } catch (err) { console.error('Raw Scores PDF error:', err); alert("Could not generate PDF. Please try again."); }
+    finally { setIsGenerating(false); }
+  };
+
   const shareReport = async () => {
     setIsGenerating(true);
     try {
@@ -231,7 +257,7 @@ export const ReportsScreen = () => {
   if (reportMode === 'individual' && studentId) {
     const s = students.find((x: any) => String(x.id) === studentId);
     if (s) targetStudents = [s];
-  } else if ((reportMode === 'bulk' || reportMode === 'averages' || reportMode === 'subject-averages') && classId) {
+  } else if ((reportMode === 'bulk' || reportMode === 'averages' || reportMode === 'subject-averages' || reportMode === 'raw-scores') && classId) {
     targetStudents = students.filter((x: any) => Number(x.class_id) === Number(classId));
   }
 
@@ -334,6 +360,7 @@ export const ReportsScreen = () => {
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'bulk' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('bulk'); setDocType('report'); }}>Bulk Class Export</button>
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'averages' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('averages'); setDocType('report'); }}>Performance Table</button>
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'subject-averages' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('subject-averages'); setDocType('report'); }}>Class Chart</button>
+        <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'raw-scores' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('raw-scores'); setDocType('report'); }}>Class Raw Scores</button>
       </div>
 
       <GlassCard droplet className="p-5">
@@ -346,7 +373,7 @@ export const ReportsScreen = () => {
                 <GlassSelect label="Select Class" value={classId} onChange={e => setClassId(e.target.value)} options={classes.map((c: any) => ({ value: c.id!, label: c.name }))} />
               )}
             </div>
-            {(reportMode !== 'averages' && reportMode !== 'subject-averages') && (
+            {(reportMode !== 'averages' && reportMode !== 'subject-averages' && reportMode !== 'raw-scores') && (
               <div className="w-full sm:w-64">
                 <GlassSelect label="Document Type" value={docType} onChange={e => setDocType(e.target.value as any)}
                   options={[{value: 'report', label: 'Report Card'}, {value: 'transcript', label: 'Academic Transcript'}, {value: 'certificate', label: 'Completion Certificate'}]} />
@@ -360,7 +387,7 @@ export const ReportsScreen = () => {
               <input type="text" value={academicYear} onChange={e => setAcademicYear(e.target.value)} placeholder="2023/2024" disabled={docType !== 'report'}
                 className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium shadow-sm backdrop-blur-md disabled:cursor-not-allowed" />
             </div>
-            {(reportMode !== 'averages' && reportMode !== 'subject-averages') && (
+            {(reportMode !== 'averages' && reportMode !== 'subject-averages' && reportMode !== 'raw-scores') && (
               <div className={`flex flex-col gap-1.5 ${docType !== 'report' ? 'opacity-50' : ''}`}>
                 <label className="text-sm font-semibold text-slate-700 ml-1 drop-shadow-sm">Teacher Override</label>
                 <input type="text" value={reportTeacher} onChange={e => setReportTeacher(e.target.value)} placeholder="Leave blank for Class Teacher" disabled={docType !== 'report'}
@@ -378,6 +405,7 @@ export const ReportsScreen = () => {
               {reportMode === 'individual' ? 'Previewing Report Card'
                 : reportMode === 'bulk' ? `Previewing Bulk Set (${targetStudents.length} Students)`
                 : reportMode === 'subject-averages' ? `Subject Averages Chart`
+                : reportMode === 'raw-scores' ? `Class Raw Scores (${targetStudents.length} Students)`
                 : `Class Performance Table (${targetStudents.length} Students)`}
             </h2>
             <div className="flex gap-2">
@@ -408,6 +436,11 @@ export const ReportsScreen = () => {
               {reportMode === 'subject-averages' && classId && (
                 <GlassButton onClick={generateClassChartPDF} disabled={isGenerating} className="!px-4 bg-indigo-600 text-white">
                   {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download Chart</>}
+                </GlassButton>
+              )}
+              {reportMode === 'raw-scores' && classId && (
+                <GlassButton onClick={generateRawScoresPDF} disabled={isGenerating} className="!px-4 bg-indigo-600 text-white">
+                  {isGenerating ? <span className="animate-pulse">Generating...</span> : <><Download size={20} /> Download Raw Scores</>}
                 </GlassButton>
               )}
             </div>
@@ -455,6 +488,72 @@ export const ReportsScreen = () => {
               <div ref={classChartRef} className="p-4 w-full h-80 flex items-center justify-center bg-white">
                 <SubjectAveragesChart students={targetStudents} scores={allScores} subjects={subjects} />
               </div>
+            ) : reportMode === 'raw-scores' ? (
+              <div ref={rawScoresRef} className="overflow-x-auto w-full bg-white p-4">
+                <h3 className="text-center font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider">
+                  Class Raw Scores - {classes.find((c: any) => String(c.id) === classId)?.name || ''} ({reportTerm} {academicYear})
+                </h3>
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider border-y border-slate-200">
+                      <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-0 bg-slate-100">Pos</th>
+                      <th className="py-2 px-2 font-bold border-r border-slate-200 sticky left-8 bg-slate-100">Student Name</th>
+                      {subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id))).map((sub: any) => (
+                        <th key={sub.id} className="py-2 px-2 font-bold text-center border-r border-slate-200" colSpan={3}>
+                          {sub.name}
+                        </th>
+                      ))}
+                      <th className="py-2 px-2 font-black text-center border-r border-slate-200 bg-indigo-50">Total</th>
+                    </tr>
+                    <tr className="bg-slate-50 text-slate-600 text-[10px] border-b border-slate-200">
+                      <th className="py-1 px-2 border-r border-slate-200 sticky left-0 bg-slate-50"></th>
+                      <th className="py-1 px-2 border-r border-slate-200 sticky left-8 bg-slate-50"></th>
+                      {subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id))).map((sub: any) => (
+                        <React.Fragment key={sub.id}>
+                          <th className="py-1 px-1 text-center border-r border-slate-200 font-semibold">C/A</th>
+                          <th className="py-1 px-1 text-center border-r border-slate-200 font-semibold">Exam</th>
+                          <th className="py-1 px-1 text-center border-r border-slate-200 font-bold">Tot</th>
+                        </React.Fragment>
+                      ))}
+                      <th className="py-1 px-2 text-center border-r border-slate-200 font-black bg-indigo-50"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const activeSubjects = subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id)));
+                      const studentTotals = targetStudents.map((student: any) => {
+                        const studentScoresForTerm = allScores.filter((sc: any) => sc.student_id === student.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
+                        const total = studentScoresForTerm.reduce((sum: number, sc: any) => sum + (Number(sc.total) || 0), 0);
+                        return { ...student, total };
+                      }).sort((a: any, b: any) => b.total - a.total);
+                      let rank = 1;
+                      let prevTotal: number | null = null;
+                      const ranked = studentTotals.map((s: any, i: number) => {
+                        if (prevTotal !== null && s.total < prevTotal) rank = i + 1;
+                        prevTotal = s.total;
+                        return { ...s, position: rank };
+                      });
+                      return ranked.map((student: any) => (
+                        <tr key={student.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="py-2 px-2 font-bold text-center border-r border-slate-200 sticky left-0 bg-white">{student.position}</td>
+                          <td className="py-2 px-2 font-bold text-slate-800 border-r border-slate-200 sticky left-8 bg-white whitespace-nowrap">{student.name}</td>
+                          {activeSubjects.map((sub: any) => {
+                            const score = allScores.find((sc: any) => sc.student_id === student.id && sc.subject_id === sub.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
+                            return (
+                              <React.Fragment key={sub.id}>
+                                <td className="py-2 px-1 text-center border-r border-slate-100">{score?.class_score ?? '-'}</td>
+                                <td className="py-2 px-1 text-center border-r border-slate-100">{score?.exam_score ?? '-'}</td>
+                                <td className="py-2 px-1 text-center font-bold border-r border-slate-200">{score?.total ?? '-'}</td>
+                              </React.Fragment>
+                            );
+                          })}
+                          <td className="py-2 px-2 text-center font-black text-indigo-700 bg-indigo-50/50">{student.total}</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div ref={reportRef} className="w-full relative shrink-0 text-left bg-white flex flex-col items-center">
                 {renderData.map((data: any, index: number) => (
@@ -473,7 +572,7 @@ export const ReportsScreen = () => {
         </div>
       ) : (
         <div className="mt-12 flex flex-col items-center justify-center text-slate-500 pb-24">
-          {reportMode === 'bulk' ? <Users size={48} className="mb-4 opacity-50" /> : <FileWarning size={48} className="mb-4 opacity-50" />}
+          {reportMode === 'bulk' || reportMode === 'raw-scores' ? <Users size={48} className="mb-4 opacity-50" /> : <FileWarning size={48} className="mb-4 opacity-50" />}
           <p className="font-medium">{reportMode === 'individual' ? 'Please select a student to view their report card' : 'Please select a class to generate a batch PDF'}</p>
         </div>
       )}
