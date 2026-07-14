@@ -40,12 +40,21 @@ router.get('/report/:code', async (req, res, next) => {
     }
 
     const entry = ac.rows[0];
+    console.log('Portal access:', { student_id: entry.student_id, school_id: entry.school_id, purpose: entry.purpose });
 
     // Get all subjects registered for this student's school
     const allSubjects = await pool.query(
       `SELECT id, name FROM subjects WHERE school_id = $1 ORDER BY name`,
       [entry.school_id]
     );
+    console.log('All subjects count:', allSubjects.rows.length);
+
+    // Check if student has ANY scores at all
+    const anyScores = await pool.query(
+      `SELECT COUNT(*) as count FROM scores WHERE student_id = $1`,
+      [entry.student_id]
+    );
+    console.log('Student total scores:', anyScores.rows[0].count);
 
     let scores;
     if (entry.purpose === 'transcript') {
@@ -57,6 +66,7 @@ router.get('/report/:code', async (req, res, next) => {
         [entry.student_id]
       );
     } else {
+      // First try to get the latest term/year combination
       const latestResult = await pool.query(
         `SELECT term, academic_year FROM scores
          WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
@@ -66,6 +76,8 @@ router.get('/report/:code', async (req, res, next) => {
         [entry.student_id]
       );
       const latest = latestResult.rows[0];
+      console.log('Latest scores found:', latest);
+
       if (latest) {
         scores = await pool.query(
           `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
@@ -74,8 +86,17 @@ router.get('/report/:code', async (req, res, next) => {
            ORDER BY sub.name`,
           [entry.student_id, latest.term, latest.academic_year]
         );
+        console.log('Scores for latest term:', scores.rows.length);
       } else {
-        scores = { rows: [] };
+        // No scores with term/year - get ALL scores for this student
+        scores = await pool.query(
+          `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+           FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+           WHERE sc.student_id = $1
+           ORDER BY sub.name`,
+          [entry.student_id]
+        );
+        console.log('All student scores (no term filter):', scores.rows.length);
       }
     }
 
@@ -83,13 +104,15 @@ router.get('/report/:code', async (req, res, next) => {
     const scoresExist = scores.rows.length > 0;
     const finalScores = scoresExist
       ? scores.rows
-      : allSubjects.rows.map((sub: any) => ({
+      : allSubjects.rows.map((sub) => ({
           subject: sub.name,
           class_score: 0,
           exam_score: 0,
           total: 0,
           grade: '-'
         }));
+
+    console.log('Final scores count:', finalScores.length);
 
     const school = await pool.query(
       'SELECT name, address, location, phone, email FROM schools WHERE id = $1',
@@ -118,6 +141,7 @@ router.get('/report/:code', async (req, res, next) => {
       scores: finalScores
     });
   } catch (err) {
+    console.error('Portal report error:', err);
     next(err);
   }
 });
