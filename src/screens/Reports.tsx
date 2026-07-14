@@ -331,7 +331,7 @@ export const ReportsScreen = () => {
     <div className="p-6 pt-4 flex flex-col gap-6 relative pb-24">
       <div className="inline-flex gap-1 p-1 bg-white/40 backdrop-blur-md rounded-xl border border-white/60 shadow-sm self-start flex-wrap">
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'individual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => setReportMode('individual')}>Individual Student</button>
-        <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'bulk' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => setReportMode('bulk')}>Bulk Class Export</button>
+        <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'bulk' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('bulk'); setDocType('report'); }}>Bulk Class Export</button>
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'averages' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('averages'); setDocType('report'); }}>Performance Table</button>
         <button className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${reportMode === 'subject-averages' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-800 hover:bg-white/50'}`} onClick={() => { setReportMode('subject-averages'); setDocType('report'); }}>Class Chart</button>
       </div>
