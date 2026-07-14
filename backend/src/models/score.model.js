@@ -9,7 +9,16 @@ export const ScoreModel = {
                WHERE sc.school_id = $1`;
     const params = [schoolId];
     let idx = 2;
-    if (student_id) { sql += ` AND sc.student_id = $${idx++}`; params.push(student_id); }
+    if (student_id) {
+      const ids = String(student_id).split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length === 1) {
+        sql += ` AND sc.student_id = $${idx++}`;
+        params.push(ids[0]);
+      } else if (ids.length > 1) {
+        sql += ` AND sc.student_id IN (${ids.map(() => `$${idx++}`).join(',')})`;
+        params.push(...ids);
+      }
+    }
     if (subject_id) { sql += ` AND sc.subject_id = $${idx++}`; params.push(subject_id); }
     if (term) { sql += ` AND sc.term = $${idx++}`; params.push(term); }
     if (academic_year) { sql += ` AND sc.academic_year = $${idx++}`; params.push(academic_year); }

@@ -92,15 +92,20 @@ export const ReportsScreen = () => {
               params.student_id = studentsInClass.map((s: any) => s.id).join(',');
             }
           }
-        } else if (docType === 'report') {
-          params.term = reportTerm;
-          params.academic_year = academicYear;
         } else if (reportMode === 'individual' && studentId) {
           params.student_id = studentId;
-        } else if (classId) {
+          if (docType === 'report') {
+            params.term = reportTerm;
+            params.academic_year = academicYear;
+          }
+        } else if (reportMode === 'bulk' && classId) {
           const studentsInClass = studentsRaw.filter((s: any) => String(s.class_id) === String(classId));
           if (studentsInClass.length > 0) {
             params.student_id = studentsInClass.map((s: any) => s.id).join(',');
+          }
+          if (docType === 'report') {
+            params.term = reportTerm;
+            params.academic_year = academicYear;
           }
         }
         const data = await scoreService.getAll(params);
@@ -255,7 +260,7 @@ export const ReportsScreen = () => {
       const pos = isCurrentTerm ? subjectRankings.get(sc.subject_id)?.get(student.id!) || null : null;
       return { ...sc, subjectName: getSubjectName(sc.subject_id), subjectPosition: pos };
     });
-    const classAverages = students.filter((s: any) => s.class_id === student.class_id).map((s: any) => {
+    const classAverages = students.filter((s: any) => String(s.class_id) === String(student.class_id)).map((s: any) => {
       const sScores = allScores.filter((sc: any) => sc.student_id === s.id && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
       const avg = calculateAverage(sScores);
       const examTotal = sScores.reduce((sum: number, curr: any) => sum + (Number(curr.exam_score) || 0), 0) * 2;
@@ -266,7 +271,8 @@ export const ReportsScreen = () => {
     const myRanking = rankings.find((r: any) => r.id === student.id);
     let myClass = classes.find((c: any) => String(c.id) === String(student.class_id));
     if (!myClass && classes.length > 0) myClass = classes[0];
-    return { student, studentScores, myRanking, totalInClass, myClass };
+    const allClassStudents = rankings.sort((a: any, b: any) => (a.position || 999) - (b.position || 999));
+    return { student, studentScores, myRanking, totalInClass, myClass, allClassStudents };
   });
 
   let whatsappHref = '';
@@ -455,7 +461,7 @@ export const ReportsScreen = () => {
                 {renderData.map((data: any, index: number) => (
                   <React.Fragment key={data.student.id}>
                     <div className="w-full flex justify-center">
-                      {docType === 'report' && <ReportCard student={data.student} studentScores={data.studentScores} myRanking={data.myRanking} totalInClass={data.totalInClass} myClass={data.myClass} schoolProfile={schoolProfile} getSubjectName={getSubjectName} term={reportTerm} academicYear={academicYear} reportTeacher={reportTeacher} />}
+                      {docType === 'report' && <ReportCard student={data.student} studentScores={data.studentScores} myRanking={data.myRanking} totalInClass={data.totalInClass} myClass={data.myClass} schoolProfile={schoolProfile} getSubjectName={getSubjectName} term={reportTerm} academicYear={academicYear} reportTeacher={reportTeacher} allClassStudents={data.allClassStudents} allClassScores={classScoresForRanking} />}
                       {docType === 'transcript' && <TranscriptBuilder student={data.student} allScores={data.studentScores} schoolProfile={schoolProfile} />}
                       {docType === 'certificate' && <CertificateBuilder student={data.student} schoolProfile={schoolProfile} myClass={data.myClass} myRanking={data.myRanking} totalInClass={data.totalInClass} term={reportTerm} academicYear={academicYear} />}
                     </div>
