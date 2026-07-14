@@ -22,7 +22,6 @@ export const StudentDashboardScreen = () => {
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
-  const [allScores, setAllScores] = useState<any[]>([]);
   const [schoolProfile, setSchoolProfile] = useState<any>({});
   const [isDownloading, setIsDownloading] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -43,19 +42,17 @@ export const StudentDashboardScreen = () => {
       const p = localStorage.getItem('schoolProfile');
       if (p) { try { setSchoolProfile(JSON.parse(p)); } catch(e){} }
 
-      const [profileData, scoresData, subData, clsData, rawScores] = await Promise.all([
+      const [profileData, scoresData, subData, clsData] = await Promise.all([
         studentAuthService.getStudentProfile(studentId),
         studentAuthService.getStudentScores(studentId),
         subjectService.getAll(),
-        classService.getAll(),
-        (await import('../services/scoreService')).scoreService.getAll({ student_id: studentId })
+        classService.getAll()
       ]);
 
       setProfile(profileData);
       setScores(scoresData);
       setSubjects(subData);
       setClasses(clsData);
-      setAllScores(rawScores);
     } catch (err) {
       console.error('Failed to load student data:', err);
     } finally {
@@ -169,7 +166,7 @@ export const StudentDashboardScreen = () => {
           <div ref={reportRef}>
             <ReportCard
               student={{ ...profile, class_id: profile.class_id }}
-              studentScores={allScores.map((s: any) => ({ ...s, subjectName: getSubjectName(s.subject_id) }))}
+              studentScores={scores.map((s: any) => ({ ...s, subjectName: s.subject_name || getSubjectName(s.subject_id) }))}
               myRanking={scores.length > 0 ? { average: Number(stats.average), position: null } : null}
               totalInClass={null}
               myClass={classes.find((c: any) => c.id === profile.class_id)}
