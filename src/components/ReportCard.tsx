@@ -17,12 +17,12 @@ export const ReportCard = ({
   const displayTeacherName = reportTeacher ? reportTeacher : (myClass?.teacher_name && myClass.teacher_name.toLowerCase() !== 'not assigned' ? myClass.teacher_name : 'Not assigned');
 
   const generateRemark = (firstName: string, avg: number) => {
-    if (avg >= 85) return `${firstName} is an exceptional student who consistently demonstrates outstanding academic excellence and a deep commitment to learning. With sustained effort and focus, there is no doubt that ${firstName} will continue to excel and achieve even greater heights.`;
-    if (avg >= 75) return `${firstName} has shown commendable progress and a strong dedication to studies this term. The results reflect hard work and a genuine desire to succeed. Continued effort and attention to weaker areas will help ${firstName} reach even higher levels of achievement.`;
-    if (avg >= 65) return `${firstName} is performing well and shows a solid understanding of the curriculum. There is, however, room for improvement in certain subjects. With more consistent study habits and active class participation, ${firstName} is well-positioned to make significant progress next term.`;
-    if (avg >= 50) return `${firstName} has made a fair effort this term, but the overall performance suggests that more dedication is needed. Identifying areas of difficulty and seeking additional support will be key to achieving better results. I encourage ${firstName} to set higher goals and work towards them with determination.`;
-    if (avg >= 35) return `${firstName}'s performance this term has been below expectations and is a cause for concern. A significant improvement in study habits, class participation, and assignment completion is urgently needed. I strongly recommend that ${firstName} take advantage of any available remedial sessions and put in considerably more effort.`;
-    return `${firstName}'s academic progress has been very slow and requires immediate and focused intervention. It is strongly recommended that ${firstName} receive additional academic support, and that parents or guardians work closely with the school to develop a plan for improvement. Consistent attendance, homework completion, and active engagement in class are essential next steps.`;
+    if (avg >= 85) return `${firstName} is an exceptional student who consistently demonstrates outstanding academic excellence. Keep up the great work and aim even higher.`;
+    if (avg >= 75) return `${firstName} has shown commendable progress and strong dedication to studies this term. Continued effort will help achieve even greater results.`;
+    if (avg >= 65) return `${firstName} is performing well and shows a solid understanding of the curriculum. More consistent study habits will help improve further.`;
+    if (avg >= 50) return `${firstName} has made a fair effort but needs more dedication to achieve better results. Identifying weak areas and seeking support will help improve performance.`;
+    if (avg >= 35) return `${firstName}'s performance this term has been below expectations and needs improvement. A significant change in study habits and class participation is strongly recommended.`;
+    return `${firstName}'s academic progress requires immediate intervention and focused support. Parents and guardians are encouraged to work closely with the school.`;
   };
 
   const getOrdinalNum = (n: number | string) => {
