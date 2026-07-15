@@ -43,26 +43,31 @@ router.get('/report/:code', async (req, res, next) => {
 
     const entry = ac.rows[0];
 
-    // Get all subjects registered for this student's school
-    const allSubjects = await pool.query(
-      `SELECT id, name FROM subjects WHERE school_id = $1 ORDER BY name`,
-      [entry.school_id]
+    // Get subjects that have scores for this student's class (scoped to school)
+    const classSubjects = await pool.query(
+      `SELECT DISTINCT sub.id, sub.name FROM subjects sub
+       INNER JOIN scores sc ON sc.subject_id = sub.id
+       INNER JOIN students st ON st.id = sc.student_id
+       WHERE st.class_id = $1 AND sub.school_id = $2
+       ORDER BY sub.name`,
+      [entry.class_id, entry.school_id]
     );
 
     let scores;
     if (entry.purpose === 'transcript') {
       scores = await pool.query(
-        `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade, sc.term, sc.academic_year
-         FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+        `SELECT sc.subject_id, sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade, sc.term, sc.academic_year
+         FROM scores sc LEFT JOIN subjects sub ON sub.id = sc.subject_id
          WHERE sc.student_id = $1
-         ORDER BY sc.academic_year DESC, sc.term, sub.name`,
+         ORDER BY sc.academic_year DESC,
+           CASE sc.term WHEN 'Term 3' THEN 3 WHEN 'Term 2' THEN 2 ELSE 1 END DESC,
+           sub.name`,
         [entry.student_id]
       );
     } else if (term && academic_year) {
-      // Filter by specific term and academic_year
       scores = await pool.query(
-        `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
-         FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+        `SELECT sc.subject_id, sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+         FROM scores sc LEFT JOIN subjects sub ON sub.id = sc.subject_id
          WHERE sc.student_id = $1 AND sc.term = $2 AND sc.academic_year = $3
          ORDER BY sub.name`,
         [entry.student_id, term, academic_year]
@@ -72,7 +77,7 @@ router.get('/report/:code', async (req, res, next) => {
       const latestResult = await pool.query(
         `SELECT term, academic_year FROM scores
          WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
-         ORDER BY academic_year DESC,
+         ORDER BY academic_year::text DESC,
            CASE term WHEN 'Term 3' THEN 3 WHEN 'Term 2' THEN 2 ELSE 1 END DESC
          LIMIT 1`,
         [entry.student_id]
@@ -81,8 +86,8 @@ router.get('/report/:code', async (req, res, next) => {
 
       if (latest) {
         scores = await pool.query(
-          `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
-           FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+          `SELECT sc.subject_id, sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+           FROM scores sc LEFT JOIN subjects sub ON sub.id = sc.subject_id
            WHERE sc.student_id = $1 AND sc.term = $2 AND sc.academic_year = $3
            ORDER BY sub.name`,
           [entry.student_id, latest.term, latest.academic_year]
@@ -90,8 +95,8 @@ router.get('/report/:code', async (req, res, next) => {
       } else {
         // No scores with term/year - get ALL scores for this student
         scores = await pool.query(
-          `SELECT sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
-           FROM scores sc JOIN subjects sub ON sub.id = sc.subject_id
+          `SELECT sc.subject_id, sub.name AS subject, sc.class_score, sc.exam_score, sc.total, sc.grade
+           FROM scores sc LEFT JOIN subjects sub ON sub.id = sc.subject_id
            WHERE sc.student_id = $1
            ORDER BY sub.name`,
           [entry.student_id]
@@ -99,11 +104,12 @@ router.get('/report/:code', async (req, res, next) => {
       }
     }
 
-    // If no scores found, return all subjects with zero values
+    // If no scores found, return class-scoped subjects with zero values
     const scoresExist = scores.rows.length > 0;
     const finalScores = scoresExist
       ? scores.rows
-      : allSubjects.rows.map((sub) => ({
+      : classSubjects.rows.map((sub) => ({
+          subject_id: sub.id,
           subject: sub.name,
           class_score: 0,
           exam_score: 0,
@@ -115,13 +121,13 @@ router.get('/report/:code', async (req, res, next) => {
     const availableTerms = await pool.query(
       `SELECT DISTINCT term, academic_year FROM scores
        WHERE student_id = $1 AND term IS NOT NULL AND academic_year IS NOT NULL
-       ORDER BY academic_year DESC,
+       ORDER BY academic_year::text DESC,
          CASE term WHEN 'Term 3' THEN 3 WHEN 'Term 2' THEN 2 ELSE 1 END DESC`,
       [entry.student_id]
     );
 
     const school = await pool.query(
-      'SELECT name, address, location, phone, email FROM schools WHERE id = $1',
+      'SELECT name, address, location, phone, email, logo FROM schools WHERE id = $1',
       [entry.school_id]
     );
     const sch = school.rows[0] || {};
@@ -142,7 +148,8 @@ router.get('/report/:code', async (req, res, next) => {
         school_address: sch.address || '',
         school_location: sch.location || '',
         school_phone: sch.phone || '',
-        school_email: sch.email || ''
+        school_email: sch.email || '',
+        school_logo: sch.logo || ''
       },
       scores: finalScores,
       availableTerms: availableTerms.rows

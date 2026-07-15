@@ -541,7 +541,7 @@ export const ReportsScreen = () => {
                     <table className="w-full border-collapse" style={{ border: '2px solid #1e293b' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
-                          <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '40px' }}>Pos</th>
+                          <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '40px' }}>No.</th>
                           <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-left" style={{ minWidth: '160px' }}>Student Name</th>
                           {activeSubjects.map((sub: any) => (
                             <th key={sub.id} className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '70px' }}>{getShortSubjectName(sub.name)}</th>

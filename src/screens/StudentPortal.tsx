@@ -79,6 +79,16 @@ export const StudentPortalScreen = () => {
     finally { setIsGenerating(false); }
   };
 
+  const hasTermData = report?.scores?.some((s: any) => s.term || s.academic_year);
+  const groupedScores = hasTermData
+    ? report.scores.reduce((acc: any[], s: any) => {
+        const key = `${s.term || 'Unknown'} - ${s.academic_year || 'Unknown'}`;
+        const existing = acc.find((g: any) => g.key === key);
+        if (existing) { existing.scores.push(s); } else { acc.push({ key, term: s.term, academicYear: s.academic_year, scores: [s] }); }
+        return acc;
+      }, [])
+    : [];
+  const displayScores = hasTermData ? groupedScores : [{ key: '', scores: report?.scores || [] }];
   const totalScore = report?.scores?.reduce((acc: number, s: any) => acc + (Number(s.total) || 0), 0) || 0;
   const avgScore = report?.scores?.length > 0 ? (totalScore / report.scores.length).toFixed(1) : '0';
 
@@ -184,19 +194,26 @@ export const StudentPortalScreen = () => {
         )}
 
         {/* Scores List */}
-        <div className="border-t border-white/40 pt-3 space-y-1">
+        <div className="border-t border-white/40 pt-3 space-y-3">
           {report.scores.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-4">No scores found.</p>
           ) : (
-            report.scores.map((s: any, i: number) => (
-              <div key={i} className="flex justify-between items-center py-1.5 border-b border-white/20 last:border-0">
-                <span className="text-sm font-medium text-slate-700">{s.subject}</span>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="text-slate-500">CW: {s.class_score}</span>
-                  <span className="text-slate-500">Exam: {s.exam_score}</span>
-                  <span className="font-bold text-blue-700">{s.total}</span>
-                  {s.grade && <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold">{s.grade}</span>}
-                </div>
+            displayScores.map((group: any, gi: number) => (
+              <div key={gi}>
+                {hasTermData && group.key && (
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 pb-1 border-b border-white/20">{group.key}</p>
+                )}
+                {group.scores.map((s: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center py-1.5 border-b border-white/20 last:border-0">
+                    <span className="text-sm font-medium text-slate-700">{s.subject}</span>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-500">CW: {s.class_score}</span>
+                      <span className="text-slate-500">Exam: {s.exam_score}</span>
+                      <span className="font-bold text-blue-700">{s.total}</span>
+                      {s.grade && <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold">{s.grade}</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
             ))
           )}
@@ -282,14 +299,21 @@ export const StudentPortalScreen = () => {
                 </tr>
               </thead>
               <tbody>
-                {report.scores.map((s: any, i: number) => (
-                  <tr key={i} className="border-b border-slate-200">
-                    <td className="py-1.5 px-2 font-medium">{s.subject}</td>
-                    <td className="py-1.5 px-2 text-center">{s.class_score}</td>
-                    <td className="py-1.5 px-2 text-center">{s.exam_score}</td>
-                    <td className="py-1.5 px-2 text-center font-bold">{s.total}</td>
-                    <td className="py-1.5 px-2 text-center">{s.grade || '-'}</td>
-                  </tr>
+                {displayScores.map((group: any, gi: number) => (
+                  <React.Fragment key={gi}>
+                    {hasTermData && group.key && (
+                      <tr><td colSpan={5} className="py-1 px-2 text-[10px] font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">{group.key}</td></tr>
+                    )}
+                    {group.scores.map((s: any, i: number) => (
+                      <tr key={i} className="border-b border-slate-200">
+                        <td className="py-1.5 px-2 font-medium">{s.subject}</td>
+                        <td className="py-1.5 px-2 text-center">{s.class_score}</td>
+                        <td className="py-1.5 px-2 text-center">{s.exam_score}</td>
+                        <td className="py-1.5 px-2 text-center font-bold">{s.total}</td>
+                        <td className="py-1.5 px-2 text-center">{s.grade || '-'}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
