@@ -10,8 +10,7 @@ import { Share } from '@capacitor/share';
 import { useAuth } from '../contexts/AuthContext';
 import { studentAuthService } from '../services/studentAuthService';
 import { ReportCard } from '../components/ReportCard';
-import { subjectService } from '../services/subjectService';
-import { classService } from '../services/classService';
+
 
 export const StudentDashboardScreen = () => {
   const { user, logout } = useAuth();
@@ -21,8 +20,7 @@ export const StudentDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'academic'>('academic');
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+
   const [schoolProfile, setSchoolProfile] = useState<any>({});
   const [isDownloading, setIsDownloading] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -43,17 +41,13 @@ export const StudentDashboardScreen = () => {
       const p = localStorage.getItem('schoolProfile');
       if (p) { try { setSchoolProfile(JSON.parse(p)); } catch(e){} }
 
-      const [profileData, scoresData, subData, clsData] = await Promise.all([
+      const [profileData, scoresData] = await Promise.all([
         studentAuthService.getStudentProfile(studentId),
-        studentAuthService.getStudentScores(studentId),
-        subjectService.getAll(),
-        classService.getAll()
+        studentAuthService.getStudentScores(studentId)
       ]);
 
       setProfile(profileData);
       setScores(scoresData);
-      setSubjects(subData);
-      setClasses(clsData);
     } catch (err) {
       console.error('Failed to load student data:', err);
     } finally {
@@ -97,7 +91,7 @@ export const StudentDashboardScreen = () => {
     setExpandedTerms(newExpanded);
   };
 
-  const getSubjectName = (id: number) => subjects.find((s: any) => s.id === id)?.name || 'Unknown';
+  const getSubjectName = (id: number) => scores.find((s: any) => s.subject_id === id)?.subject_name || 'Unknown';
 
   const generatePDF = async () => {
     if (!reportRef.current || !user?.student_id) return;
@@ -167,7 +161,7 @@ export const StudentDashboardScreen = () => {
               studentScores={scores.map((s: any) => ({ ...s, subjectName: s.subject_name || getSubjectName(s.subject_id) }))}
               myRanking={scores.length > 0 ? { average: Number(stats.average), position: null } : null}
               totalInClass={null}
-              myClass={classes.find((c: any) => c.id === profile.class_id)}
+              myClass={{ name: profile.class_name }}
               schoolProfile={schoolProfile}
               getSubjectName={getSubjectName}
               term={scores.length > 0 ? scores[0]?.term || 'Current Term' : 'Current Term'}
