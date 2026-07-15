@@ -88,7 +88,7 @@ export const ReportCard = ({
                       {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
                     </div>
                     {student?.photo && (
-                      <img src={student.photo} className="w-20 h-20 rounded-md object-cover border border-[#cbd5e1] shrink-0 sm:hidden" alt="Student Thumbnail" />
+                      <img src={student.photo} className="w-20 h-20 rounded-md object-cover border border-transparent shrink-0 sm:hidden" alt="Student Thumbnail" />
                     )}
                   </div>
                 </div>
@@ -96,7 +96,7 @@ export const ReportCard = ({
               <div className="text-right flex flex-col items-end shrink-0 sm:ml-4 w-full sm:w-auto">
                 <div className="flex items-start justify-end gap-4 w-full mb-2">
                   {student?.photo && (
-                    <img src={student.photo} className="w-24 h-24 rounded-md object-cover border border-[#cbd5e1] shrink-0 hidden sm:block" alt="Student Thumbnail" />
+                    <img src={student.photo} className="w-24 h-24 rounded-md object-cover border border-transparent shrink-0 hidden sm:block" alt="Student Thumbnail" />
                   )}
                 </div>
               </div>
