@@ -12,6 +12,8 @@ router.post('/refresh', AuthController.refreshToken);
 router.get('/me', authenticate, AuthController.me);
 
 router.post('/create-teacher', authenticate, authorize('super_admin', 'school_admin'), AuthController.createTeacher);
+router.put('/teacher/:id', authenticate, authorize('super_admin', 'school_admin'), AuthController.updateTeacher);
+router.delete('/teacher/:id', authenticate, authorize('super_admin', 'school_admin'), AuthController.deleteTeacher);
 router.put('/teacher/:id/reset-password', authenticate, authorize('super_admin', 'school_admin'), AuthController.resetTeacherPassword);
 router.get('/teachers', authenticate, authorize('super_admin', 'school_admin'), AuthController.listTeacherUsers);
 

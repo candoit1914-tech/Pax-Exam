@@ -262,6 +262,68 @@ export const AuthController = {
     }
   },
 
+  async updateTeacher(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { name, email } = req.body;
+      if (!name && !email) {
+        return res.status(400).json({ error: 'Nothing to update.' });
+      }
+
+      const user = await UserModel.findById(id);
+      if (!user || user.role !== 'teacher') {
+        return res.status(404).json({ error: 'Teacher not found.' });
+      }
+      if (user.school_id !== req.user.school_id && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Forbidden.' });
+      }
+
+      if (email) {
+        const sanitizedEmail = email.toLowerCase().trim();
+        const existing = await UserModel.findByEmail(sanitizedEmail);
+        if (existing && existing.id !== Number(id)) {
+          return res.status(409).json({ error: 'Email already registered.' });
+        }
+        await UserModel.update(id, { name: name || user.name, email: sanitizedEmail });
+        await pool.query(
+          'UPDATE teachers SET name = $1, email = $2 WHERE user_id = $3 AND school_id = $4',
+          [name || user.name, sanitizedEmail, id, req.user.school_id]
+        );
+      } else {
+        await UserModel.update(id, { name });
+        await pool.query(
+          'UPDATE teachers SET name = $1 WHERE user_id = $2 AND school_id = $3',
+          [name, id, req.user.school_id]
+        );
+      }
+
+      const updated = await UserModel.findById(id);
+      res.json({ message: 'Teacher updated successfully.', user: { id: updated.id, name: updated.name, email: updated.email } });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteTeacher(req, res, next) {
+    try {
+      const { id } = req.params;
+      const user = await UserModel.findById(id);
+      if (!user || user.role !== 'teacher') {
+        return res.status(404).json({ error: 'Teacher not found.' });
+      }
+      if (user.school_id !== req.user.school_id && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Forbidden.' });
+      }
+
+      await pool.query('DELETE FROM teachers WHERE user_id = $1 AND school_id = $2', [id, req.user.school_id]);
+      await pool.query('DELETE FROM users WHERE id = $1', [id]);
+
+      res.json({ message: 'Teacher deleted successfully.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async resetTeacherPassword(req, res, next) {
     try {
       const { id } = req.params;

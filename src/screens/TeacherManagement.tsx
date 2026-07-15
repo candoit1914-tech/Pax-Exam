@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
-import { UserPlus, Key, Copy, Check, Users, RefreshCw, X } from 'lucide-react';
+import { UserPlus, Key, Copy, Check, Users, RefreshCw, X, Pencil, Trash2 } from 'lucide-react';
 import { authService } from '../services/authService';
 
 export const TeacherManagementScreen = () => {
@@ -14,6 +14,9 @@ export const TeacherManagementScreen = () => {
   const [createdCredentials, setCreatedCredentials] = useState<{email: string; password: string} | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   const loadTeachers = async () => {
     try {
@@ -54,6 +57,45 @@ export const TeacherManagementScreen = () => {
       await loadTeachers();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to reset password.');
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId || !editName || !editEmail) return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await authService.updateTeacher(editingId, editName, editEmail);
+      setSuccess('Teacher updated successfully!');
+      setEditingId(null);
+      setEditName('');
+      setEditEmail('');
+      await loadTeachers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update teacher.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEdit = (teacher: any) => {
+    setEditingId(teacher.id);
+    setEditName(teacher.name);
+    setEditEmail(teacher.email);
+    setSuccess('');
+    setError('');
+  };
+
+  const handleDelete = async (id: number, name: string) => {
+    if (!confirm(`Delete teacher "${name}"? This cannot be undone.`)) return;
+    try {
+      await authService.deleteTeacher(id);
+      setSuccess('Teacher deleted successfully!');
+      await loadTeachers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to delete teacher.');
     }
   };
 
@@ -128,14 +170,39 @@ export const TeacherManagementScreen = () => {
         <div className="space-y-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
           {teachers.map((t: any) => (
             <GlassCard key={t.id} className="p-4 flex justify-between items-center md:flex-col md:items-start md:gap-3">
-              <div>
-                <p className="font-bold text-slate-800 text-sm">{t.name}</p>
-                <p className="text-slate-500 text-xs">{t.email}</p>
-                <p className="text-[10px] text-slate-400">Active: {t.is_active ? 'Yes' : 'No'}</p>
-              </div>
-              <GlassButton sizing="sm" variant="secondary" onClick={() => handleReset(t.id)}>
-                <RefreshCw size={14} /> Reset
-              </GlassButton>
+              {editingId === t.id ? (
+                <form onSubmit={handleEditSubmit} className="space-y-2 w-full">
+                  <GlassInput label="Full Name" value={editName} onChange={e => setEditName(e.target.value)} sizing="sm" required />
+                  <GlassInput label="Email" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} sizing="sm" required />
+                  <div className="flex gap-2">
+                    <GlassButton type="submit" disabled={loading} sizing="sm" className="flex-1">
+                      {loading ? 'Saving...' : 'Save'}
+                    </GlassButton>
+                    <GlassButton sizing="sm" variant="secondary" onClick={() => setEditingId(null)} className="flex-1">
+                      Cancel
+                    </GlassButton>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{t.name}</p>
+                    <p className="text-slate-500 text-xs">{t.email}</p>
+                    <p className="text-[10px] text-slate-400">Active: {t.is_active ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <GlassButton sizing="sm" variant="secondary" onClick={() => startEdit(t)}>
+                      <Pencil size={14} /> Edit
+                    </GlassButton>
+                    <GlassButton sizing="sm" variant="secondary" onClick={() => handleReset(t.id)}>
+                      <RefreshCw size={14} /> Reset
+                    </GlassButton>
+                    <GlassButton sizing="sm" variant="secondary" onClick={() => handleDelete(t.id, t.name)}>
+                      <Trash2 size={14} /> Delete
+                    </GlassButton>
+                  </div>
+                </>
+              )}
             </GlassCard>
           ))}
         </div>

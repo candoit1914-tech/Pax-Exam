@@ -19,6 +19,17 @@ import { scoreService } from '../services/scoreService';
 import { reportService } from '../services/reportService';
 import { schoolService } from '../services/schoolService';
 
+const SUBJECT_ALIASES: Record<string, string> = {
+  'Religious and Moral Education': 'RME',
+  'English Language': 'English',
+  'Ghanaian Language': 'Twi',
+  'Social Studies': 'Social',
+  'Creative Arts': 'Creative',
+  'Career Technology': 'Career',
+  'Mathematics': 'Maths',
+};
+const getShortSubjectName = (name: string) => SUBJECT_ALIASES[name] || name;
+
 const SubjectAveragesChart = ({ students, scores, subjects }: { students: any[], scores: any[], subjects: any[] }) => {
   const data = subjects.map((subject: any) => {
     const subjectScores = scores.filter((s: any) => s.subject_id === subject.id && students.some((st: any) => st.id === s.student_id));
@@ -45,7 +56,7 @@ export const ReportsScreen = () => {
   const [classId, setClassId] = useState('');
   const [reportMode, setReportMode] = useState<'individual' | 'bulk' | 'averages' | 'subject-averages' | 'raw-scores'>('individual');
   const [reportTerm, setReportTerm] = useState('Term 1');
-  const [academicYear, setAcademicYear] = useState('2023/2024');
+  const [academicYear, setAcademicYear] = useState('2025/2026');
   const [reportTeacher, setReportTeacher] = useState('');
   const [docType, setDocType] = useState<'report' | 'transcript' | 'certificate'>('report');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -118,6 +129,7 @@ export const ReportsScreen = () => {
 
   const students = studentsRaw.filter((s: any) => s.status !== 'completed');
   const getSubjectName = (id: number) => subjects.find((s: any) => s.id === id)?.name || 'Unknown';
+  const getOrdinalNum = (n: number) => { const s = ["th", "st", "nd", "rd"]; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 
   const generatePDF = async (filename: string) => {
     if (!reportRef.current) return;
@@ -306,7 +318,6 @@ export const ReportsScreen = () => {
     const data = renderData[0];
     const sumExamScore = data.studentScores?.reduce((acc: number, curr: any) => acc + (Number(curr.exam_score) || 0), 0) || 0;
     const totalExamScoreValue = sumExamScore * 2;
-    const getOrdinalNum = (n: number) => { const s = ["th", "st", "nd", "rd"]; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
     const posLabel = data.myRanking?.position ? `${getOrdinalNum(data.myRanking.position)} out of ${data.totalInClass}` : '-';
     if (student.parent_phone) {
       const phone = student.parent_phone.replace(/[^0-9]/g, '');
@@ -384,8 +395,19 @@ export const ReportsScreen = () => {
             <GlassSelect label="Term" value={reportTerm} onChange={e => setReportTerm(e.target.value)} options={[{value: 'Term 1', label: 'Term 1'}, {value: 'Term 2', label: 'Term 2'}, {value: 'Term 3', label: 'Term 3'}]} disabled={docType !== 'report'} />
             <div className={`flex flex-col gap-1.5 ${docType !== 'report' ? 'opacity-50' : ''}`}>
               <label className="text-sm font-semibold text-slate-700 ml-1 drop-shadow-sm">Academic Year</label>
-              <input type="text" value={academicYear} onChange={e => setAcademicYear(e.target.value)} placeholder="2023/2024" disabled={docType !== 'report'}
-                className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium shadow-sm backdrop-blur-md disabled:cursor-not-allowed" />
+              {(() => {
+                const currentYear = new Date().getFullYear();
+                const years = [];
+                for (let start = 2025; start <= currentYear + 1; start++) {
+                  years.push({ value: `${start}/${start + 1}`, label: `${start}/${start + 1}` });
+                }
+                return (
+                  <select value={academicYear} onChange={e => setAcademicYear(e.target.value)} disabled={docType !== 'report'}
+                    className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium shadow-sm backdrop-blur-md disabled:cursor-not-allowed">
+                    {years.map(y => <option key={y.value} value={y.value}>{y.label}</option>)}
+                  </select>
+                );
+              })()}
             </div>
             {(reportMode !== 'averages' && reportMode !== 'subject-averages' && reportMode !== 'raw-scores') && (
               <div className={`flex flex-col gap-1.5 ${docType !== 'report' ? 'opacity-50' : ''}`}>
@@ -490,20 +512,25 @@ export const ReportsScreen = () => {
               </div>
             ) : reportMode === 'raw-scores' ? (
               <div ref={rawScoresRef} className="overflow-x-auto w-full bg-white p-6">
-                <h3 className="text-center font-bold text-slate-800 text-lg mb-4 uppercase tracking-wider">
+                <div className="flex items-center gap-4 mb-4 pb-3 border-b-2 border-slate-800">
+                  {schoolProfile.logo && (
+                    <img src={schoolProfile.logo} alt="School Logo" className="w-16 h-16 object-contain" />
+                  )}
+                  <div className="flex-1 text-center">
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-wider">{schoolProfile.name || 'School Name'}</h2>
+                    {schoolProfile.address && <p className="text-sm text-slate-600">{schoolProfile.address}</p>}
+                    {schoolProfile.location && <p className="text-xs text-slate-500">{schoolProfile.location}</p>}
+                  </div>
+                  {schoolProfile.logo && (
+                    <img src={schoolProfile.logo} alt="School Logo" className="w-16 h-16 object-contain" />
+                  )}
+                </div>
+                <h3 className="text-center font-bold text-slate-800 text-sm mb-4 uppercase tracking-wider">
                   Class Raw Scores - {classes.find((c: any) => String(c.id) === classId)?.name || ''} ({reportTerm} {academicYear})
                 </h3>
                 {(() => {
                   const activeSubjects = subjects.filter((sub: any) => allScores.some((sc: any) => sc.subject_id === sub.id && targetStudents.some((s: any) => s.id === sc.student_id)));
-                  const getOrdinalNum = (n: number) => { const s = ["th", "st", "nd", "rd"]; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
                   const termScores = (studentId: number, subjectId: number) => allScores.find((sc: any) => sc.student_id === studentId && sc.subject_id === subjectId && (sc.term || 'Term 1') === reportTerm && String(sc.academic_year || '2023/2024') === String(academicYear));
-                  const subjectPositions = new Map<number, Map<number, number>>();
-                  activeSubjects.forEach((sub: any) => {
-                    const scores = targetStudents.map((st: any) => { const sc = termScores(st.id, sub.id); return { id: st.id, exam2: sc ? (Number(sc.exam_score) || 0) * 2 : 0 }; }).sort((a: any, b: any) => b.exam2 - a.exam2);
-                    const posMap = new Map<number, number>(); let rank = 1; let prev = -1;
-                    scores.forEach((s: any, i: number) => { if (s.exam2 < prev) rank = i + 1; prev = s.exam2; posMap.set(s.id, rank); });
-                    subjectPositions.set(sub.id, posMap);
-                  });
                   const studentRows = targetStudents.map((student: any) => {
                     const total = activeSubjects.reduce((sum: number, sub: any) => { const sc = termScores(student.id, sub.id); return sum + (sc ? (Number(sc.exam_score) || 0) * 2 : 0); }, 0);
                     return { ...student, total };
@@ -514,13 +541,10 @@ export const ReportsScreen = () => {
                     <table className="w-full border-collapse" style={{ border: '2px solid #1e293b' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
-                          <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '50px' }}>Pos</th>
+                          <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '40px' }}>Pos</th>
                           <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-left" style={{ minWidth: '160px' }}>Student Name</th>
                           {activeSubjects.map((sub: any) => (
-                            <React.Fragment key={sub.id}>
-                              <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '70px' }}>{sub.name}</th>
-                              <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '50px' }}>Pos</th>
-                            </React.Fragment>
+                            <th key={sub.id} className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '70px' }}>{getShortSubjectName(sub.name)}</th>
                           ))}
                           <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Total</th>
                           <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Class Pos</th>
@@ -534,12 +558,8 @@ export const ReportsScreen = () => {
                             {activeSubjects.map((sub: any) => {
                               const sc = termScores(student.id, sub.id);
                               const exam2 = sc ? (Number(sc.exam_score) || 0) * 2 : null;
-                              const pos = subjectPositions.get(sub.id)?.get(student.id) || null;
                               return (
-                                <React.Fragment key={sub.id}>
-                                  <td className="py-3 px-3 text-center font-semibold text-sm border border-slate-300">{exam2 !== null ? exam2 : '-'}</td>
-                                  <td className={`py-3 px-3 text-center text-xs border border-slate-300 ${pos === 1 ? 'font-black text-amber-600' : 'text-slate-600'}`}>{pos ? getOrdinalNum(pos) : '-'}</td>
-                                </React.Fragment>
+                                <td key={sub.id} className="py-3 px-3 text-center font-semibold text-sm border border-slate-300">{exam2 !== null ? exam2 : '-'}</td>
                               );
                             })}
                             <td className="py-3 px-3 text-center font-black text-sm border border-slate-300" style={{ backgroundColor: '#eef2ff', color: '#3730a3' }}>{student.total}</td>

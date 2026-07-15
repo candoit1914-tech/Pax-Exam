@@ -45,6 +45,16 @@ export const authService = {
     return data;
   },
 
+  async updateTeacher(id, name, email) {
+    const { data } = await api.put(`/auth/teacher/${id}`, { name, email });
+    return data;
+  },
+
+  async deleteTeacher(id) {
+    const { data } = await api.delete(`/auth/teacher/${id}`);
+    return data;
+  },
+
   async updateProfile(name, email) {
     const { data } = await api.put('/auth/profile', { name, email });
     return data;
