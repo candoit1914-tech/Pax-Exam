@@ -115,7 +115,7 @@ export const ReportCard = ({
 
           <div className="flex justify-between items-center w-full mb-3 mt-2">
              <p className="text-[10px] text-[#64748b] font-bold uppercase text-left">Teacher: <span className="capitalize font-black text-[#0f172a] text-[13px]">{displayTeacherName}</span></p>
-             <p className="text-[11px] text-[#64748b] font-bold uppercase text-right">Total Exam Score: <span className="font-black text-[#2563eb] text-[13px]">{totalExamScoreValue}</span></p>
+             <p className="text-[11px] text-[#64748b] font-bold uppercase text-right">Total Exam Score: <span className="font-black text-[#2563eb] text-[18px]">{totalExamScoreValue}</span></p>
           </div>
 
           {/* Student Info Card */}
