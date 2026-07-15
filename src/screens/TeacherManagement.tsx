@@ -169,7 +169,7 @@ export const TeacherManagementScreen = () => {
       ) : (
         <div className="space-y-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
           {teachers.map((t: any) => (
-            <GlassCard key={t.id} className="p-4 flex justify-between items-center md:flex-col md:items-start md:gap-3">
+            <GlassCard key={t.id} className="p-4 flex flex-col gap-3">
               {editingId === t.id ? (
                 <form onSubmit={handleEditSubmit} className="space-y-2 w-full">
                   <GlassInput label="Full Name" value={editName} onChange={e => setEditName(e.target.value)} sizing="sm" required />
@@ -190,15 +190,15 @@ export const TeacherManagementScreen = () => {
                     <p className="text-slate-500 text-xs">{t.email}</p>
                     <p className="text-[10px] text-slate-400">Active: {t.is_active ? 'Yes' : 'No'}</p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5 flex-wrap">
                     <GlassButton sizing="sm" variant="secondary" onClick={() => startEdit(t)}>
-                      <Pencil size={14} /> Edit
+                      <Pencil size={14} /> <span className="hidden min-[400px]:inline">Edit</span>
                     </GlassButton>
                     <GlassButton sizing="sm" variant="secondary" onClick={() => handleReset(t.id)}>
-                      <RefreshCw size={14} /> Reset
+                      <RefreshCw size={14} /> <span className="hidden min-[400px]:inline">Reset</span>
                     </GlassButton>
                     <GlassButton sizing="sm" variant="secondary" onClick={() => handleDelete(t.id, t.name)}>
-                      <Trash2 size={14} /> Delete
+                      <Trash2 size={14} /> <span className="hidden min-[400px]:inline">Delete</span>
                     </GlassButton>
                   </div>
                 </>
