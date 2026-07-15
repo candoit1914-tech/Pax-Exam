@@ -171,30 +171,7 @@ export const StudentDashboardScreen = () => {
         )}
       </div>
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Profile Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <GlassCard className="p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
-            <div className="flex items-center gap-4">
-              {profile?.photo ? (
-                <img src={profile.photo} alt={user?.name} className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-300 shadow-lg" />
-              ) : (
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
-                  <GraduationCap size={32} />
-                </div>
-              )}
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">{user?.name}</h2>
-                <p className="text-sm text-slate-600 mt-1">
-                  Class: {user?.class_name || 'N/A'} | ID: #{user?.student_id}
-                </p>
-                {profile?.gender && (
-                  <p className="text-xs text-slate-500 mt-0.5 capitalize">{profile.gender}</p>
-                )}
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
+      <div className="max-w-4xl mx-auto p-6 pt-4 space-y-6">
 
         {/* Tabs */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>

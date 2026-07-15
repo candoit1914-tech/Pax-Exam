@@ -72,7 +72,7 @@ export const ReportCard = ({
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
               <div className="flex items-start gap-4 sm:gap-6 flex-1 min-w-0">
                 {schoolProfile.logo ? (
-                  <img src={schoolProfile.logo} className="w-20 h-20 object-contain rounded-lg border border-[#e2e8f0] shrink-0" alt="School Logo" />
+                  <img src={schoolProfile.logo} className="w-20 h-20 object-contain rounded-lg border border-transparent shrink-0" alt="School Logo" />
                 ) : (
                   <div className="w-20 h-20 bg-[#f8fafc] rounded-lg flex items-center justify-center text-[#94a3b8] font-bold border border-[#e2e8f0] shrink-0 text-center leading-tight p-1">
                     <div className="uppercase tracking-widest text-[7px] font-black text-[#0f172a]">{schoolProfile.name}</div>

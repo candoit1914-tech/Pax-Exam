@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { GlassCard, GlassInput, GlassButton } from '../components/ui/Glass';
 import { KeyRound, Download, ArrowLeft, User, Calendar, GraduationCap, Users, Hash, Filter, BookOpen, TrendingUp, Award, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { portalService } from '../services/portalService';
+import { ReportCard } from '../components/ReportCard';
+import { getGradePoint } from '../utils/grading';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
@@ -269,83 +271,35 @@ export const StudentPortalScreen = () => {
       {/* Hidden PDF render area */}
       <div className="absolute left-[-9999px] top-0">
         {report && (
-          <div ref={reportRef} className="bg-white p-4 text-gray-800" style={{ width: '210mm' }}>
-            <div className="text-center mb-3 border-b-2 border-slate-800 pb-3">
-              <h1 className="text-lg font-black uppercase tracking-wider">{report.student?.school_name || 'School Report'}</h1>
-              {report.student?.school_address && <p className="text-[10px] text-slate-500">{report.student.school_address}{report.student.school_location ? `, ${report.student.school_location}` : ''}</p>}
-              <p className="text-xs text-slate-500 font-semibold mt-1">Academic Report Card</p>
-            </div>
-
-            <div className="flex items-center gap-4 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              {report.student?.photo ? (
-                <img src={report.student.photo} alt="" className="w-16 h-16 rounded-lg object-cover border-2 border-slate-300" />
-              ) : (
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white border-2 border-slate-300">
-                  <User size={28} />
-                </div>
-              )}
-              <div className="flex-1">
-                <p className="font-bold text-slate-900 text-base">{report.student.name}</p>
-                <p className="text-xs text-slate-600">Class: {report.student.class}</p>
-                {report.student.gender && <p className="text-[10px] text-slate-500 capitalize">Gender: {report.student.gender}</p>}
-              </div>
-              <div className="text-right text-[10px] text-slate-500 space-y-0.5">
-                {report.student.dob && <p>DOB: {new Date(report.student.dob).toLocaleDateString()}</p>}
-                {report.student.admission_year && <p>Admitted: {report.student.admission_year}</p>}
-                {report.student.parent_name && <p>Parent: {report.student.parent_name}</p>}
-              </div>
-            </div>
-
-            {report.scores.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-3 text-center text-[10px]">
-                <div className="bg-blue-50 border border-blue-200 rounded p-1.5">
-                  <p className="text-slate-400 font-bold uppercase">Total Score</p>
-                  <p className="text-sm font-black text-blue-700">{totalScore}</p>
-                </div>
-                <div className="bg-indigo-50 border border-indigo-200 rounded p-1.5">
-                  <p className="text-slate-400 font-bold uppercase">Average</p>
-                  <p className="text-sm font-black text-indigo-700">{avgScore}%</p>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded p-1.5">
-                  <p className="text-slate-400 font-bold uppercase">Subjects</p>
-                  <p className="text-sm font-black text-slate-700">{report.scores.length}</p>
-                </div>
-              </div>
-            )}
-
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b-2 border-slate-800 bg-slate-100">
-                  <th className="py-2 px-2 font-bold">Subject</th>
-                  <th className="py-2 px-2 font-bold text-center">CW</th>
-                  <th className="py-2 px-2 font-bold text-center">Exam</th>
-                  <th className="py-2 px-2 font-bold text-center">Total</th>
-                  <th className="py-2 px-2 font-bold text-center">Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupedScores.map((group: any, gi: number) => (
-                  <React.Fragment key={gi}>
-                    {groupedScores.length > 1 && group.key && (
-                      <tr><td colSpan={5} className="py-1 px-2 text-[10px] font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">{group.key}</td></tr>
-                    )}
-                    {group.scores.map((s: any, i: number) => (
-                      <tr key={i} className="border-b border-slate-200">
-                        <td className="py-1.5 px-2 font-medium">{s.subject}</td>
-                        <td className="py-1.5 px-2 text-center">{s.class_score}</td>
-                        <td className="py-1.5 px-2 text-center">{s.exam_score}</td>
-                        <td className="py-1.5 px-2 text-center font-bold">{s.total}</td>
-                        <td className="py-1.5 px-2 text-center">{s.grade || '-'}</td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 pt-2 border-t border-slate-200 text-[9px] text-slate-400 text-center">
-              Contact the school for more information{report.student?.school_phone ? ` via ${report.student.school_phone}` : ''}{report.student?.school_email ? ` or ${report.student.school_email}` : ''}
-            </div>
+          <div ref={reportRef}>
+            <ReportCard
+              student={{
+                name: report.student.name,
+                gender: report.student.gender,
+                photo: report.student.photo,
+                dob: report.student.dob,
+                admission_year: report.student.admission_year,
+                class_id: null
+              }}
+              studentScores={report.scores.map((s: any) => ({
+                ...s,
+                subjectName: s.subject
+              }))}
+              myRanking={report.scores.length > 0 ? { average: Number(avgScore), position: null } : null}
+              totalInClass={null}
+              myClass={{ name: report.student.class }}
+              schoolProfile={{
+                name: report.student.school_name,
+                address: report.student.school_address,
+                location: report.student.school_location,
+                logo: report.student.school_logo,
+                phone: report.student.school_phone,
+                email: report.student.school_email
+              }}
+              getSubjectName={(id: number) => report.scores.find((s: any) => s.subject_id === id)?.subject || 'Unknown'}
+              term={selectedTerm || 'Current Term'}
+              academicYear={selectedYear || 'Current Year'}
+            />
           </div>
         )}
       </div>
