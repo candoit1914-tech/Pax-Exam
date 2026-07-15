@@ -541,29 +541,29 @@ export const ReportsScreen = () => {
                     <table className="w-full border-collapse" style={{ border: '2px solid #1e293b' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
-                          <th className="py-3 px-3 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '40px' }}>No.</th>
-                          <th className="py-3 px-3 font-bold text-sm border border-slate-600 text-left" style={{ minWidth: '160px' }}>Student Name</th>
+                          <th className="py-2 px-2 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '30px' }}>No.</th>
+                          <th className="py-2 px-2 font-bold text-xs border border-slate-600 text-left" style={{ minWidth: '140px' }}>Student Name</th>
                           {activeSubjects.map((sub: any) => (
-                            <th key={sub.id} className="py-3 px-3 font-bold text-sm border border-slate-600 text-center" style={{ minWidth: '70px' }}>{getShortSubjectName(sub.name)}</th>
+                            <th key={sub.id} className="py-2 px-2 font-bold text-xs border border-slate-600 text-center" style={{ minWidth: '40px' }}>{getShortSubjectName(sub.name)}</th>
                           ))}
-                          <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Total</th>
-                          <th className="py-3 px-3 font-black text-sm border border-slate-600 text-center" style={{ minWidth: '70px', backgroundColor: '#312e81' }}>Class Pos</th>
+                          <th className="py-2 px-2 font-black text-xs border border-slate-600 text-center" style={{ minWidth: '45px', backgroundColor: '#312e81' }}>Total</th>
+                          <th className="py-2 px-2 font-black text-xs border border-slate-600 text-center" style={{ minWidth: '40px', backgroundColor: '#312e81' }}>Pos</th>
                         </tr>
                       </thead>
                       <tbody>
                         {ranked.map((student: any, idx: number) => (
                           <tr key={student.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                            <td className="py-3 px-3 font-bold text-sm border border-slate-300 text-center">{student.classPos}</td>
-                            <td className="py-3 px-3 font-bold text-sm border border-slate-300 text-slate-800 whitespace-nowrap">{student.name}</td>
+                            <td className="py-1 px-2 font-bold text-xs border border-slate-300 text-center">{idx + 1}</td>
+                            <td className="py-1 px-2 font-bold text-xs border border-slate-300 text-slate-800 whitespace-nowrap">{student.name}</td>
                             {activeSubjects.map((sub: any) => {
                               const sc = termScores(student.id, sub.id);
                               const exam2 = sc ? (Number(sc.exam_score) || 0) * 2 : null;
                               return (
-                                <td key={sub.id} className="py-3 px-3 text-center font-semibold text-sm border border-slate-300">{exam2 !== null ? exam2 : '-'}</td>
+                                <td key={sub.id} className="py-1 px-2 text-center font-semibold text-xs border border-slate-300">{exam2 !== null ? exam2 : '-'}</td>
                               );
                             })}
-                            <td className="py-3 px-3 text-center font-black text-sm border border-slate-300" style={{ backgroundColor: '#eef2ff', color: '#3730a3' }}>{student.total}</td>
-                            <td className="py-3 px-3 text-center font-black text-sm border border-slate-300" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>{getOrdinalNum(student.classPos)}</td>
+                            <td className="py-1 px-2 text-center font-black text-xs border border-slate-300" style={{ backgroundColor: '#eef2ff', color: '#3730a3' }}>{student.total}</td>
+                            <td className="py-1 px-2 text-center font-black text-xs border border-slate-300" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>{getOrdinalNum(student.classPos)}</td>
                           </tr>
                         ))}
                       </tbody>
