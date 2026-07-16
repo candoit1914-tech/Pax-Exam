@@ -31,6 +31,12 @@ body {
     scrollbar-width: none;
 }
 
+/* Smooth scroll for mobile */
+.smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
 #root {
   display: flex;
   justify-content: center;

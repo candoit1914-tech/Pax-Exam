@@ -59,7 +59,7 @@ export const Layout: React.FC = () => {
   // For student dashboard, render without sidebar/nav — full screen scrollable
   if (isStudentRoute) {
     return (
-      <div className="w-full h-screen overflow-y-auto">
+      <div className="w-full h-screen overflow-y-auto no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Outlet />
       </div>
     );

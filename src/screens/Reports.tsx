@@ -145,8 +145,8 @@ export const ReportsScreen = () => {
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
-        alert(`PDF Saved to Documents: ${finalName}`);
+        const writeResult = await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: finalName, text: 'Report Card', url: writeResult.uri, dialogTitle: 'Save or Share Report Card' });
       } else {
         await html2pdf().set(opt).from(reportRef.current).save();
       }
@@ -170,8 +170,8 @@ export const ReportsScreen = () => {
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(performanceTableRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
-        alert(`PDF Saved: ${finalName}`);
+        const writeResult = await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: finalName, text: 'Performance Table', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
       } else {
         await html2pdf().set(opt).from(performanceTableRef.current).save();
       }
@@ -195,8 +195,8 @@ export const ReportsScreen = () => {
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(classChartRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
-        alert(`PDF Saved: ${finalName}`);
+        const writeResult = await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: finalName, text: 'Subject Averages Chart', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
       } else {
         await html2pdf().set(opt).from(classChartRef.current).save();
       }
@@ -220,8 +220,8 @@ export const ReportsScreen = () => {
       if (Capacitor.isNativePlatform()) {
         const pdfBase64 = await html2pdf().set(opt).from(rawScoresRef.current).outputPdf('datauristring');
         const base64Data = pdfBase64.split(',')[1];
-        await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
-        alert(`PDF Saved: ${finalName}`);
+        const writeResult = await Filesystem.writeFile({ path: finalName, data: base64Data, directory: Directory.Documents });
+        await Share.share({ title: finalName, text: 'Raw Scores', url: writeResult.uri, dialogTitle: 'Save or Share PDF' });
       } else {
         await html2pdf().set(opt).from(rawScoresRef.current).save();
       }

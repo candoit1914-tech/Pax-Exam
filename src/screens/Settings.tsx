@@ -7,6 +7,7 @@ import { importData, ImportEntityType, ImportResult, getTemplateData, getTemplat
 import { motion, AnimatePresence } from 'motion/react';
 import { Database, Download, Upload, CheckCircle2, AlertCircle, Building2, Save, FileSpreadsheet, X, Loader2, User, Lock, Eye, EyeOff, Users, UserCheck, GraduationCap, BookOpen, ClipboardList } from 'lucide-react';
 import { authService } from '../services/authService';
+import { schoolService } from '../services/schoolService';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateAverage, rankStudents } from '../utils/ranking';
 import { BroadsheetBuilder } from '../components/BroadsheetBuilder';
@@ -149,13 +150,33 @@ export const SettingsScreen = () => {
   };
 
   useEffect(() => {
-    const p = localStorage.getItem('schoolProfile');
-    if(p) {
-      try { 
-        const parsed = JSON.parse(p);
-        setProfile(prev => ({ ...prev, ...parsed })); 
-      } catch(e){}
-    }
+    const loadProfile = async () => {
+      const p = localStorage.getItem('schoolProfile');
+      if(p) {
+        try { 
+          const parsed = JSON.parse(p);
+          setProfile(prev => ({ ...prev, ...parsed })); 
+        } catch(e){}
+      }
+      try {
+        const serverProfile = await schoolService.getProfile();
+        if (serverProfile) {
+          const mapped = {
+            name: serverProfile.name || '',
+            address: serverProfile.address || '',
+            location: serverProfile.location || '',
+            phone: serverProfile.phone || '',
+            email: serverProfile.email || '',
+            logo: serverProfile.logo || '',
+            teacherSignature: '',
+            principalSignature: serverProfile.principal_signature || '',
+          };
+          setProfile(prev => ({ ...prev, ...mapped }));
+          localStorage.setItem('schoolProfile', JSON.stringify(mapped));
+        }
+      } catch(e) {}
+    };
+    loadProfile();
   }, []);
 
   const showStatus = (type: 'success' | 'error', message: string) => {
@@ -163,10 +184,23 @@ export const SettingsScreen = () => {
     setTimeout(() => setStatus({ type: null, message: '' }), 4000);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('schoolProfile', JSON.stringify(profile));
-    showStatus('success', 'School profile saved successfully!');
+    try {
+      await schoolService.updateProfile({
+        name: profile.name,
+        address: profile.address,
+        location: profile.location,
+        phone: profile.phone,
+        email: profile.email,
+        logo: profile.logo,
+        principal_signature: profile.principalSignature,
+      });
+      showStatus('success', 'School profile saved successfully!');
+    } catch (err: any) {
+      showStatus('success', 'School profile saved locally!');
+    }
   };
 
   const handleExport = async () => {
