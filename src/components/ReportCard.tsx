@@ -189,9 +189,9 @@ export const ReportCard = ({
 
               <div className="w-64 text-center relative shrink-0">
                 {schoolProfile.principalSignature ? (
-                  <img src={schoolProfile.principalSignature} className="h-12 object-contain mx-auto mb-1" alt="Headmaster Signature" />
+                  <img src={schoolProfile.principalSignature} className="h-24 w-full object-contain mx-auto mb-1" alt="Headmaster Signature" />
                 ) : (
-                  <div className="h-12 mb-1"></div>
+                  <div className="h-24 mb-1"></div>
                 )}
                 <div className="border-b border-[#94a3b8] mb-2 h-0"></div>
                 <p className="text-[12px] font-bold text-[#64748b]">Headmaster</p>
