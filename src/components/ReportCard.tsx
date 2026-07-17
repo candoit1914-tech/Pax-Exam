@@ -83,7 +83,7 @@ export const ReportCard = ({
                 <div className="flex flex-col items-start min-w-0">
                   <div className="flex items-start gap-4 w-full">
                     <div className="flex flex-col">
-                      <h1 className="text-base sm:text-lg font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap">{schoolProfile.name}</h1>
+                      <h1 className="text-base sm:text-lg font-black text-[#0f172a] uppercase tracking-widest leading-none whitespace-nowrap" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{schoolProfile.name}</h1>
                       {schoolProfile.address && <p className="text-[11px] text-[#475569] font-semibold leading-none mt-1.5">{schoolProfile.address}</p>}
                       {schoolProfile.location && <p className="text-[11px] text-[#475569] font-medium leading-none mt-0.5">{schoolProfile.location}</p>}
                     </div>
@@ -189,9 +189,9 @@ export const ReportCard = ({
 
               <div className="w-64 text-center relative shrink-0">
                 {schoolProfile.principalSignature ? (
-                  <img src={schoolProfile.principalSignature} className="h-24 w-full object-contain mx-auto mb-1" alt="Headmaster Signature" />
+                  <img src={schoolProfile.principalSignature} className="h-20 w-full object-contain mx-auto" alt="Headmaster Signature" style={{ marginBottom: '-4px' }} />
                 ) : (
-                  <div className="h-24 mb-1"></div>
+                  <div className="h-20 mb-0"></div>
                 )}
                 <div className="border-b border-[#94a3b8] mb-2 h-0"></div>
                 <p className="text-[12px] font-bold text-[#64748b]">Headmaster</p>
