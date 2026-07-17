@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { GlassCard, GlassButton } from '../components/ui/Glass';
-import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, ChevronDown, ChevronUp, Download, Calendar, Phone, Hash, Shield, UserCircle } from 'lucide-react';
+import { GraduationCap, LogOut, User, BookOpen, Award, TrendingUp, Download, Calendar, Phone, Hash, Shield, UserCircle } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
@@ -57,16 +57,6 @@ export const StudentDashboardScreen = () => {
     await logout();
     navigate('/student-login', { replace: true });
   };
-
-  const groupedScores = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    scores.forEach(score => {
-      const key = `${score.academic_year} - ${score.term}`;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(score);
-    });
-    return groups;
-  }, [scores]);
 
   const stats = useMemo(() => {
     if (scores.length === 0) return { totalScore: 0, average: 0, highest: 0, subjectCount: 0 };
@@ -198,10 +188,10 @@ export const StudentDashboardScreen = () => {
         {/* Stats Cards */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={<BookOpen size={20} className="text-blue-600" />} bg="bg-blue-100" value={stats.subjectCount} label="Subjects" />
-            <StatCard icon={<TrendingUp size={20} className="text-green-600" />} bg="bg-green-100" value={stats.average} label="Average" />
-            <StatCard icon={<Award size={20} className="text-amber-600" />} bg="bg-amber-100" value={stats.highest} label="Highest" />
-            <StatCard icon={<User size={20} className="text-purple-600" />} bg="bg-purple-100" value={profile?.status === 'active' ? 'Active' : 'Completed'} label="Status" />
+            <StatCard icon={<BookOpen size={16} className="text-blue-600" />} bg="bg-blue-100" value={stats.subjectCount} label="Subjects" />
+            <StatCard icon={<TrendingUp size={16} className="text-green-600" />} bg="bg-green-100" value={stats.average} label="Average" />
+            <StatCard icon={<Award size={16} className="text-amber-600" />} bg="bg-amber-100" value={stats.highest} label="Highest" />
+            <StatCard icon={<User size={16} className="text-purple-600" />} bg="bg-purple-100" value={profile?.status === 'active' ? 'Active' : 'Completed'} label="Status" />
           </div>
         </motion.div>
 
@@ -214,51 +204,6 @@ export const StudentDashboardScreen = () => {
           </motion.div>
         )}
 
-        {/* Scores - All Expanded */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">My Scores</h2>
-
-          {scores.length === 0 ? (
-            <GlassCard className="p-8 text-center">
-              <BookOpen size={48} className="text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 font-medium">No scores recorded yet</p>
-              <p className="text-xs text-slate-400 mt-1">Your scores will appear here once your teachers enter them</p>
-            </GlassCard>
-          ) : (
-            <div className="space-y-3">
-              {Object.entries(groupedScores).map(([termKey, termScores], idx) => (
-                <GlassCard key={termKey} className="overflow-hidden">
-                  <div className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
-                        <BookOpen size={16} className="text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-900 text-sm">{termKey}</p>
-                        <p className="text-[10px] text-slate-500">{termScores.length} subjects</p>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      {termScores.map((score, i) => (
-                        <div key={i} className="flex items-center justify-between py-1.5 border-b border-white/20 last:border-0">
-                          <span className="text-sm font-medium text-slate-700">{score.subject_name}</span>
-                          <div className="flex items-center gap-3 text-xs">
-                            <span className="text-slate-500">CW: {score.class_score}</span>
-                            <span className="text-slate-500">Exam: {score.exam_score}</span>
-                            <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{score.total}</span>
-                            {score.grade && (
-                              <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold">{score.grade}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </GlassCard>
-              ))}
-            </div>
-          )}
-        </motion.div>
       </div>
     </div>
   );
@@ -275,11 +220,11 @@ const InfoItem = ({ icon, label, value, capitalize }: { icon: React.ReactNode; l
 );
 
 const StatCard = ({ icon, bg, value, label }: { icon: React.ReactNode; bg: string; value: any; label: string }) => (
-  <GlassCard className="p-3 text-center">
-    <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center mx-auto mb-1.5`}>
+  <GlassCard className="p-2 text-center">
+    <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center mx-auto mb-1`}>
       {icon}
     </div>
-    <p className="text-xl font-black text-slate-900">{value}</p>
-    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+    <p className="text-base font-black text-slate-900">{value}</p>
+    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
   </GlassCard>
 );
